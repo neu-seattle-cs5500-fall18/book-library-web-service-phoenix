@@ -7,5 +7,6 @@ app = Flask(__name__)
 def start_service():
     return "Welcome to BookVector", 200
 
+
 if __name__ == '__main__':
     app.run(debug=True)
