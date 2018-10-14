@@ -1,673 +1,1231 @@
-{  
-   "swagger":"2.0",
-   "info":{  
-      "description":"This is the API document of the BookVector service.",
-      "version":"1.0.0",
-      "title":"BookVector",
-      "contact":{  
-         "email":""
-      },
-      "license":{  
-         "name":"Apache 2.0",
-         "url":"http://www.apache.org/licenses/LICENSE-2.0.html"
-      }
-   },
-   "host":"bookstore.swagger.io",
-   "basePath":"/v2",
-   "tags":[  
-      {  
-         "name":"book",
-         "description":"Everything about books"
-      },
-      {  
-         "name":"user",
-         "description":"Operations about user"
-      }
-   ],
-   "schemes":[  
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "BookVector service API.",
+    "version": "1.0.0",
+    "title": "BookVector",
+    "host": "book-vector.herokuapp.com",
+    "basePath": "/v2",
+    "schemes": [
       "https"
-   ],
-   "paths":{  
-      "/book":{  
-         "post":{  
-            "tags":[  
-               "book"
-            ],
-            "summary":"Add a new book to the library",
-            "description":"Add a new book to the library",
-            "operationId":"addBook",
-            "consumes":[  
-               "application/json",
-               "application/xml"
-            ],
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "in":"body",
-                  "name":"body",
-                  "description":"Book object that needs to be added to the library",
-                  "required":true,
-                  "schema":{  
-                     "$ref":"#/definitions/book"
-                  }
-               }
-            ],
-            "responses":{  
-               "405":{  
-                  "description":"Invalid input"
-               }
+    ],
+    "consumes": [
+      "application/json"
+    ],
+    "produces": [
+      "application/json"
+    ],
+    "securityDefinitions": {
+      "api_key": {
+        "type": "apiKey",
+        "name": "api_key",
+        "in": "header"
+      }
+    },
+    "paths": {
+      "/book": {
+        "post": {
+          "tags": [
+            "book"
+          ],
+          "summary": "Add a new book to the library.",
+          "description": "Add a new book to the library.",
+          "operationId": "addBook",
+          "parameters": [
+            {
+              "in": "body",
+              "name": "body",
+              "description": "Book object that needs to be added to the library.",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Book"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
             },
-            "security":[  
-               {  
-                  "libary_auth":[  
-                     "write:books",
-                     "read:books"
-                  ]
-               }
-            ]
-         },
-         "put":{  
-            "tags":[  
-               "book"
-            ],
-            "summary":"Update an existing book",
-            "description":"",
-            "operationId":"updatebook",
-            "consumes":[  
-               "application/json",
-               "application/xml"
-            ],
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "in":"body",
-                  "name":"body",
-                  "description":"book object that needs to be added to the library",
-                  "required":true,
-                  "schema":{  
-                     "$ref":"#/definitions/book"
-                  }
-               }
-            ],
-            "responses":{  
-               "400":{  
-                  "description":"Invalid ID supplied"
-               },
-               "404":{  
-                  "description":"book not found"
-               },
-               "405":{  
-                  "description":"Validation exception"
-               }
+            "404": {
+              "description": "Book not found."
             },
-            "security":[  
-               {  
-                  "libary_auth":[  
-                     "write:books",
-                     "read:books"
-                  ]
-               }
-            ]
-         }
+            "405": {
+              "description": "Invalid input."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        },
+        "put": {
+          "tags": [
+            "book"
+          ],
+          "summary": "Update an existing book.",
+          "description": "Update an existing book.",
+          "operationId": "updateBook",
+          "parameters": [
+            {
+              "description": "book object that needs to be added to the library.",
+              "in": "body",
+              "name": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Book"
+              }
+            }
+          ],
+          "responses": {
+            "400": {
+              "description": "Invalid ID supplied."
+            },
+            "401": {
+              "description": "Unaurthorized"
+            },
+            "404": {
+              "description": "book not found."
+            },
+            "200": {
+              "description": "The operation was successful."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
       },
-      "/book/findByAuthors":{  
-         "get":{  
-            "tags":[  
-               "book"
-            ],
-            "summary":"Finds books by author",
-            "description":"Find books by author Id",
-            "operationId":"findbooksByAuthors",
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "name":"authorId",
-                  "in":"path",
-                  "description":"ID of author of the book",
-                  "required":true,
-                  "type":"integer",
-                  "format":"int64"
-               }
-            ],
-            "responses":{  
-               "200":{  
-                  "description":"successful operation",
-                  "schema":{  
-                     "type":"array",
-                     "items":{  
-                        "$ref":"#/definitions/book"
-                     }
-                  }
-               },
-               "400":{  
-                  "description":"Invalid status value"
-               }
+      "/book/{bookId}": {
+        "get": {
+          "tags": [
+            "book"
+          ],
+          "summary": "Find book by ID.",
+          "description": "Returns a single book by its ID.",
+          "operationId": "getBook",
+          "parameters": [
+            {
+              "name": "bookId",
+              "in": "path",
+              "description": "ID of book to return.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful operation.",
+              "schema": {
+                "$ref": "#/definitions/Book"
+              }
             },
-            "security":[  
-               {  
-                  "libary_auth":[  
-                     "write:books",
-                     "read:books"
-                  ]
-               }
-            ]
-         }
+            "400": {
+              "description": "Invalid ID supplied."
+            },
+            "404": {
+              "description": "Book not found."
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "book"
+          ],
+          "summary": "Deletes a book.",
+          "description": "Deletes a book.",
+          "operationId": "deleteBook",
+          "parameters": [
+            {
+              "name": "bookId",
+              "in": "path",
+              "description": "ID of the Book to delete.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "400": {
+              "description": "Invalid ID supplied."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "Book not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
       },
-      "/book/{bookId}":{  
-         "get":{  
-            "tags":[  
-               "book"
-            ],
-            "summary":"Find book by ID",
-            "description":"Returns a single book",
-            "operationId":"getbookById",
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "name":"bookId",
-                  "in":"path",
-                  "description":"ID of book to return",
-                  "required":true,
-                  "type":"integer",
-                  "format":"int64"
-               }
-            ],
-            "responses":{  
-               "200":{  
-                  "description":"successful operation",
-                  "schema":{  
-                     "$ref":"#/definitions/book"
-                  }
-               },
-               "400":{  
-                  "description":"Invalid ID supplied"
-               },
-               "404":{  
-                  "description":"book not found"
-               }
+      "/book/findByAuthor": {
+        "get": {
+          "tags": [
+            "book"
+          ],
+          "summary": "Get all booksin the library by author Id.",
+          "description": "Get all books in the library by author Id.",
+          "operationId": "findByAuthorId",
+          "parameters": [
+            {
+              "name": "author",
+              "in": "query",
+              "description": "Author of the book to find.",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful.",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Book"
+                }
+              }
             },
-            "security":[  
-               {  
-                  "api_key":[  
+            "400": {
+              "description": "Invalid input."
+            }
+          }
+        }
+      },
+      "/book/findByYear": {
+        "get": {
+          "tags": [
+            "book"
+          ],
+          "summary": "Get all booksin the library by year.",
+          "description": "Get all books in the library by year.",
+          "operationId": "findByYear",
+          "parameters": [
+            {
+              "name": "year",
+              "in": "query",
+              "description": "Year of the book to find.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful.",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Book"
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid input."
+            }
+          }
+        }
+      },
+      "/copy": {
+        "post": {
+          "tags": [
+            "copy"
+          ],
+          "summary": "Add a new copy of an existing book in the library.",
+          "description": "Add a new copy of an existing book in the library.",
+          "operationId": "addCopy",
+          "parameters": [
+            {
+              "in": "body",
+              "name": "body",
+              "description": "the body of copy.",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Copy"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "400": {
+              "description": "Invalid input."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        },
+        "put": {
+          "tags": [
+            "copy"
+          ],
+          "summary": "Update a copy of book in the library",
+          "description": "Update a copy of book in the library",
+          "operationId": "updateCopy",
+          "parameters": [
+            {
+              "in": "body",
+              "name": "body",
+              "description": "the body of copy",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Copy"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "400": {
+              "description": "Invalid input"
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
+      },
+      "/copy/{copyId}/": {
+        "get": {
+          "tags": [
+            "copy"
+          ],
+          "summary": "Get the copy of an existing book in the library by Id.",
+          "description": "Get the copy of an existing book in the library by Id.",
+          "operationId": "addCopy",
+          "parameters": [
+            {
+              "name": "copyId",
+              "in": "path",
+              "description": "ID of the copy.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "400": {
+              "description": "Invalid input."
+            },
+            "401": {
+              "description": "Copy not found."
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "copy"
+          ],
+          "summary": "Delete a copy of an existing book in the library by Id.",
+          "description": "Delete a copy of an existing book in the library by Id.",
+          "operationId": "deleteCopy",
+          "parameters": [
+            {
+              "name": "copyId",
+              "in": "path",
+              "description": "ID of the copy",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "400": {
+              "description": "Invalid input."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "Copy not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
+      },
+      "/copy/findByBookId/": {
+        "get": {
+          "tags": [
+            "copy"
+          ],
+          "summary": "Get all copies of a book in the library by book Id.",
+          "description": "Get all copies of a book in the library by book Id.",
+          "operationId": "findByBookId",
+          "parameters": [
+            {
+              "name": "bookId",
+              "in": "query",
+              "description": "ID of the book to return.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Book"
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid input."
+            }
+          }
+        }
+      },
+      "/order": {
+        "post": {
+          "tags": [
+            "order"
+          ],
+          "summary": "Start a new order request.",
+          "description": "Start a new order request.",
+          "operationId": "addOrder",
+          "parameters": [
+            {
+              "description": "The body of order.",
+              "in": "body",
+              "name": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Order"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "400": {
+              "description": "Invalid input."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
+      },
+      "/order/{orderId}/accept": {
+        "post": {
+          "tags": [
+            "order"
+          ],
+          "summary": "Accept the order request.",
+          "description": "Accept the order request.",
+          "operationId": "acceptOrder",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "orderId",
+              "description": "the Id of order.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "400": {
+              "description": "Invalid input."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "Order not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
+      },
+      "/order/{orderId}/decline": {
+        "post": {
+          "tags": [
+            "order"
+          ],
+          "summary": "Decline the order request.",
+          "description": "Decline the order request.",
+          "operationId": "declineOrder",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "orderId",
+              "description": "the Id of order",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "400": {
+              "description": "Invalid input."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "Order not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
+      },
+      "/order/{orderId}/updateStatus": {
+        "post": {
+          "tags": [
+            "order"
+          ],
+          "summary": "Update the status of existing order.",
+          "description": "Update the status of existing order.",
+          "operationId": "updateOrderStatus",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "orderId",
+              "description": "the Id of order",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+            {
+              "name": "status",
+              "in": "body",
+              "description": "Status values that need to be updated for this order.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "400": {
+              "description": "Invalid input."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "order not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
+      },
+      "/order/{orderId}/sendReminder": {
+        "post": {
+          "tags": [
+            "order"
+          ],
+          "summary": "Send reminder to borrower.",
+          "description": "Send reminder to borrower.",
+          "operationId": "sendReminder",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "orderId",
+              "description": "the Id of order",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+            {
+              "name": "message",
+              "in": "boddy",
+              "description": "Message to borrower.",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "400": {
+              "description": "Invalid input."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "Order not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
+      },
+      "/user": {
+        "post": {
+          "tags": [
+            "user"
+          ],
+          "summary": "Create user",
+          "description": "This can only be done by the logged in user.",
+          "operationId": "createUser",
+          "produces": [
+            "application/xml",
+            "application/json"
+          ],
+          "parameters": [
+            {
+              "in": "body",
+              "name": "body",
+              "description": "Created user object.",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The operation was successful."
+            },
+            "400": {
+              "description": "Invalid input."
+            }
+          }
+        }
+      },
+      "/user/login": {
+        "get": {
+          "tags": [
+            "user"
+          ],
+          "summary": "Logs user into the system.",
+          "description": "Logs user into the system.",
+          "operationId": "loginUser",
+          "parameters": [
+            {
+              "name": "username",
+              "in": "query",
+              "description": "The user name for login.",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "name": "password",
+              "in": "query",
+              "description": "The password for login in clear text.",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "successful operation",
+              "schema": {
+                "type": "string"
+              },
+              "headers": {
+                "X-Expires-After": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "date in UTC when token expires"
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid username/password supplied"
+            }
+          }
+        }
+      },
+      "/user/logout": {
+        "get": {
+          "tags": [
+            "user"
+          ],
+          "summary": "Logs out current logged in user session.",
+          "description": "Logs out current logged in user session.",
+          "operationId": "logoutUser",
+          "parameters": [
 
-                  ]
-               }
-            ]
-         },
-         "delete":{  
-            "tags":[  
-               "book"
-            ],
-            "summary":"Deletes a book",
-            "description":"",
-            "operationId":"deletebook",
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "name":"api_key",
-                  "in":"header",
-                  "required":false,
-                  "type":"string"
-               },
-               {  
-                  "name":"bookId",
-                  "in":"path",
-                  "description":"book id to delete",
-                  "required":true,
-                  "type":"integer",
-                  "format":"int64"
-               }
-            ],
-            "responses":{  
-               "400":{  
-                  "description":"Invalid ID supplied"
-               },
-               "404":{  
-                  "description":"book not found"
-               }
+          ],
+          "responses": {
+            "default": {
+              "description": "Successful operation."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
+      },
+      "/user/{username}": {
+        "get": {
+          "tags": [
+            "user"
+          ],
+          "summary": "Get user by user name",
+          "description": "Get user by user name.",
+          "operationId": "getUserByName",
+          "parameters": [
+            {
+              "name": "username",
+              "in": "path",
+              "description": "The name that needs to be fetched.",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful operation.",
+              "schema": {
+                "$ref": "#/definitions/User"
+              }
             },
-            "security":[  
-               {  
-                  "libary_auth":[  
-                     "write:books",
-                     "read:books"
-                  ]
-               }
-            ]
-         }
+            "400": {
+              "description": "Invalid username supplied"
+            },
+            "404": {
+              "description": "User not found"
+            }
+          }
+        },
+        "put": {
+          "tags": [
+            "user"
+          ],
+          "summary": "Updated user",
+          "description": "This can only be done by the logged in user.",
+          "operationId": "updateUser",
+          "parameters": [
+            {
+              "name": "username",
+              "in": "path",
+              "description": "name that need to be updated.",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "in": "body",
+              "name": "body",
+              "description": "Updated user object.",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "successful operation."
+            },
+            "400": {
+              "description": "Invalid user supplied."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "User not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        },
+        "delete": {
+          "tags": [
+            "user"
+          ],
+          "summary": "Delete user",
+          "description": "This can only be done by the logged in user.",
+          "operationId": "deleteUser",
+          "parameters": [
+            {
+              "name": "username",
+              "in": "path",
+              "description": "The name that needs to be deleted.",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "successful operation."
+            },
+            "400": {
+              "description": "Invalid username supplied."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "User not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
       },
-      "/user":{  
-         "post":{  
-            "tags":[  
-               "user"
-            ],
-            "summary":"Create user",
-            "description":"This can only be done by the logged in user.",
-            "operationId":"createUser",
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "in":"body",
-                  "name":"body",
-                  "description":"Created user object",
-                  "required":true,
-                  "schema":{  
-                     "$ref":"#/definitions/User"
-                  }
-               }
-            ],
-            "responses":{  
-               "default":{  
-                  "description":"successful operation"
-               }
+      "/user/{username}/privateList": {
+        "post": {
+          "tags": [
+            "privateList"
+          ],
+          "summary": "Add a new private list for user.",
+          "description": "Add a new private list for user.",
+          "operationId": "addPrivateList",
+          "parameters": [
+            {
+              "name": "username",
+              "in": "path",
+              "description": "The username who owns the private list.",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "in": "body",
+              "name": "name",
+              "description": "Name of private list to create.",
+              "required": true,
+              "type": "string"
             }
-         }
+          ],
+          "responses": {
+            "200": {
+              "description": "successful operation."
+            },
+            "400": {
+              "description": "Invalid Request Body."
+            }
+            "401": {
+              "description": "Unaurthorized"
+            },
+          }
+        }
       },
-      "/user/login":{  
-         "get":{  
-            "tags":[  
-               "user"
-            ],
-            "summary":"Logs user into the system",
-            "description":"",
-            "operationId":"loginUser",
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "name":"username",
-                  "in":"query",
-                  "description":"The user name for login",
-                  "required":true,
-                  "type":"string"
-               },
-               {  
-                  "name":"password",
-                  "in":"query",
-                  "description":"The password for login in clear text",
-                  "required":true,
-                  "type":"string"
-               }
-            ],
-            "responses":{  
-               "200":{  
-                  "description":"successful operation",
-                  "schema":{  
-                     "type":"string"
-                  },
-                  "headers":{  
-                     "X-Rate-Limit":{  
-                        "type":"integer",
-                        "format":"int32",
-                        "description":"calls per hour allowed by the user"
-                     },
-                     "X-Expires-After":{  
-                        "type":"string",
-                        "format":"date-time",
-                        "description":"date in UTC when token expires"
-                     }
-                  }
-               },
-               "400":{  
-                  "description":"Invalid username/password supplied"
-               }
+      "/user/{username}/privateList/{privateListId}": {
+        "delete": {
+          "tags": [
+            "privateList"
+          ],
+          "summary": "Delete private list by private list Id.",
+          "description": "Delete private list by private list Id.",
+          "operationId": "deletePrivateList",
+          "parameters": [
+            {
+              "name": "username",
+              "in": "path",
+              "description": "The username who owns the private list.",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "name": "privateListId",
+              "in": "path",
+              "description": "The Id of private list.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
             }
-         }
+          ],
+          "responses": {
+            "400": {
+              "description": "Invalid Id supplied."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "Not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        },
+        "get": {
+          "tags": [
+            "privateList"
+          ],
+          "summary": "Get private list by private list Id.",
+          "description": "Get private list by private list Id.",
+          "operationId": "getPrivateList",
+          "parameters": [
+            {
+              "name": "username",
+              "in": "path",
+              "description": "The username who owns the private list.",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "name": "privateListId",
+              "in": "path",
+              "description": "The Id of private list.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful operation",
+              "schema": {
+                "$ref": "#/definitions/PrivateList"
+              }
+            },
+            "400": {
+              "description": "Invalid Id supplied."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "Not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
       },
-      "/user/logout":{  
-         "get":{  
-            "tags":[  
-               "user"
-            ],
-            "summary":"Logs out current logged in user session",
-            "description":"",
-            "operationId":"logoutUser",
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-
-            ],
-            "responses":{  
-               "default":{  
-                  "description":"successful operation"
-               }
+      "/user/{username}/privateList/{privateListId}/addBooks": {
+        "post": {
+          "tags": [
+            "privateList"
+          ],
+          "summary": "Add books to private list.",
+          "description": "Add books to private list.",
+          "operationId": "getPrivateList",
+          "parameters": [
+            {
+              "name": "username",
+              "in": "path",
+              "description": "The username who owns the private list.",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "name": "privateListId",
+              "in": "path",
+              "description": "The Id of private list.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+            {
+              "in": "body",
+              "name": "books",
+              "description": "List of book Ids to add.",
+              "required": true,
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
             }
-         }
+          ],
+          "responses": {
+            "200": {
+              "description": "successful operation."
+            },
+            "400": {
+              "description": "Invalid Id supplied."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "Not found."
+            }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
+            }
+          ]
+        }
       },
-      "/user/{username}":{  
-         "get":{  
-            "tags":[  
-               "user"
-            ],
-            "summary":"Get user by user name",
-            "description":"",
-            "operationId":"getUserByName",
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "name":"username",
-                  "in":"path",
-                  "description":"The name that needs to be fetched. Use user1 for testing. ",
-                  "required":true,
-                  "type":"string"
-               }
-            ],
-            "responses":{  
-               "200":{  
-                  "description":"successful operation",
-                  "schema":{  
-                     "$ref":"#/definitions/User"
-                  }
-               },
-               "400":{  
-                  "description":"Invalid username supplied"
-               },
-               "404":{  
-                  "description":"User not found"
-               }
+      "/user/{username}/privateList/{privateListId}/removeBooks": {
+        "post": {
+          "tags": [
+            "privateList"
+          ],
+          "summary": "Remove books from private list.",
+          "description": "Remove books from private list.",
+          "operationId": "removePrivateList",
+          "parameters": [
+            {
+              "name": "username",
+              "in": "path",
+              "description": "The username who owns the private list.",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "name": "privateListId",
+              "in": "path",
+              "description": "The Id of private list.",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+            {
+              "in": "body",
+              "name": "books",
+              "description": "List of book Ids to remove.",
+              "required": true,
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
             }
-         },
-         "put":{  
-            "tags":[  
-               "user"
-            ],
-            "summary":"Updated user",
-            "description":"This can only be done by the logged in user.",
-            "operationId":"updateUser",
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "name":"username",
-                  "in":"path",
-                  "description":"name that need to be updated",
-                  "required":true,
-                  "type":"string"
-               },
-               {  
-                  "in":"body",
-                  "name":"body",
-                  "description":"Updated user object",
-                  "required":true,
-                  "schema":{  
-                     "$ref":"#/definitions/User"
-                  }
-               }
-            ],
-            "responses":{  
-               "400":{  
-                  "description":"Invalid user supplied"
-               },
-               "404":{  
-                  "description":"User not found"
-               }
+          ],
+          "responses": {
+            "200": {
+              "description": "successful operation."
+            },
+            "400": {
+              "description": "Invalid Id supplied."
+            },
+            "401": {
+              "description": "Unaurthorized."
+            },
+            "404": {
+              "description": "Not found."
             }
-         },
-         "delete":{  
-            "tags":[  
-               "user"
-            ],
-            "summary":"Delete user",
-            "description":"This can only be done by the logged in user.",
-            "operationId":"deleteUser",
-            "produces":[  
-               "application/xml",
-               "application/json"
-            ],
-            "parameters":[  
-               {  
-                  "name":"username",
-                  "in":"path",
-                  "description":"The name that needs to be deleted",
-                  "required":true,
-                  "type":"string"
-               }
-            ],
-            "responses":{  
-               "400":{  
-                  "description":"Invalid username supplied"
-               },
-               "404":{  
-                  "description":"User not found"
-               }
+          },
+          "security": [
+            {
+              "api_key": [
+              ]
             }
-         }
+          ]
+        }
       }
-   },
-   "securityDefinitions":{  
-      "libary_auth":{  
-         "type":"oauth2",
-         "authorizationUrl":"https://bookstore.swagger.io/oauth/dialog",
-         "flow":"implicit",
-         "scopes":{  
-            "write:books":"modify books in your account",
-            "read:books":"read your books"
-         }
+    },
+    "definitions": {
+      "Book": {
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "category": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "description": "Information about a Book."
       },
-      "api_key":{  
-         "type":"apiKey",
-         "name":"api_key",
-         "in":"header"
+      "PrivateList": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "books": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        },
+        "description": "Information about a Private List."
+      },
+      "Copy": {
+        "type": "object",
+        "required": [
+          "user",
+          "book",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "user": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "book": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "description": "Information about a book copy."
+      },
+      "Order": {
+        "type": "object",
+        "required": [
+          "borrowerId",
+          "copy",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "borrowerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "copy": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "description": "Information about an order."
+      },
+      "User": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "username": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        },
+        "description": "Information about an user."
       }
-   },
-   "definitions":{  
-      "User":{  
-         "type":"object",
-         "properties":{  
-            "id":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "username":{  
-               "type":"string"
-            },
-            "firstName":{  
-               "type":"string"
-            },
-            "lastName":{  
-               "type":"string"
-            },
-            "email":{  
-               "type":"string"
-            },
-            "password":{  
-               "type":"string"
-            },
-            "phone":{  
-               "type":"string"
-            }
-         },
-         "xml":{  
-            "name":"User"
-         }
-      },
-      "Author":{  
-         "type":"object",
-         "properties":{  
-            "id":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "firstName":{  
-               "type":"string"
-            },
-            "lastName":{  
-               "type":"string"
-            }
-         },
-         "xml":{  
-            "name":"User"
-         }
-      },
-      "Ownership":{  
-         "type":"object",
-         "properties":{  
-            "id":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "user":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "book":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "status":{  
-               "type":"integer",
-               "format":"int64"
-            }
-         },
-         "xml":{  
-            "name":"ownership"
-         }
-      },
-      "borrow":{  
-         "type":"object",
-         "properties":{  
-            "id":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "borrower":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "Ownership":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "status":{  
-               "type":"integer",
-               "format":"int64"
-            }
-         },
-         "xml":{  
-            "name":"borrow"
-         }
-      },
-      "Category":{  
-         "type":"object",
-         "properties":{  
-            "id":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "name":{  
-               "type":"string"
-            }
-         },
-         "xml":{  
-            "name":"Category"
-         }
-      },
-      "Tag":{  
-         "type":"object",
-         "properties":{  
-            "id":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "name":{  
-               "type":"string"
-            }
-         },
-         "xml":{  
-            "name":"Tag"
-         }
-      },
-      "book":{  
-         "type":"object",
-         "required":[  
-            "name",
-            "photoUrls"
-         ],
-         "properties":{  
-            "id":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "category":{  
-               "$ref":"#/definitions/Category"
-            },
-            "name":{  
-               "type":"string"
-            },
-            "photoUrls":{  
-               "type":"array",
-               "xml":{  
-                  "name":"photoUrl",
-                  "wrapped":true
-               },
-               "items":{  
-                  "type":"string"
-               }
-            },
-            "tags":{  
-               "type":"array",
-               "xml":{  
-                  "name":"tag",
-                  "wrapped":true
-               },
-               "items":{  
-                  "$ref":"#/definitions/Tag"
-               }
-            },
-            "author":{  
-               "type":"integer",
-               "format":"int64"
-            },
-            "year":{  
-               "type":"integer",
-               "format":"int64"
-            }
-         },
-         "xml":{  
-            "name":"book"
-         }
-      },
-      "ApiResponse":{  
-         "type":"object",
-         "properties":{  
-            "code":{  
-               "type":"integer",
-               "format":"int32"
-            },
-            "type":{  
-               "type":"string"
-            },
-            "message":{  
-               "type":"string"
-            }
-         }
-      }
-   }
+    }
+  }
 }
