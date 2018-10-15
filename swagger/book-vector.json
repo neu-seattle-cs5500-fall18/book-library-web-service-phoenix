@@ -16,12 +16,13 @@
       "application/json"
     ],
     "securityDefinitions": {
-      "api_key": {
-        "type": "apiKey",
-        "name": "api_key",
-        "in": "header"
+      "basicAuth": {
+        "type": "basic"
       }
     },
+    "security": [{
+      "basicAuth": []
+    }],
     "paths": {
       "/book": {
         "post": {
@@ -52,13 +53,7 @@
             "405": {
               "description": "Invalid input."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         },
         "put": {
           "tags": [
@@ -91,13 +86,7 @@
             "200": {
               "description": "The operation was successful."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/book/{bookId}": {
@@ -160,65 +149,33 @@
             "404": {
               "description": "Book not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
-      "/book/findByAuthor": {
+      "/book/search": {
         "get": {
           "tags": [
             "book"
           ],
-          "summary": "Get all booksin the library by author Id.",
-          "description": "Get all books in the library by author Id.",
-          "operationId": "findByAuthorId",
+          "summary": "Get all books in the library by author or by year.",
+          "description": "Get all books in the library by author or by year.",
+          "operationId": "findBooks",
           "parameters": [
             {
               "name": "author",
               "in": "query",
               "description": "Author of the book to find.",
-              "required": true,
+              "required": false,
               "type": "string"
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "The operation was successful.",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/Book"
-                }
-              }
             },
-            "400": {
-              "description": "Invalid input."
-            }
-          }
-        }
-      },
-      "/book/findByYear": {
-        "get": {
-          "tags": [
-            "book"
-          ],
-          "summary": "Get all booksin the library by year.",
-          "description": "Get all books in the library by year.",
-          "operationId": "findByYear",
-          "parameters": [
             {
               "name": "year",
               "in": "query",
               "description": "Year of the book to find.",
-              "required": true,
+              "required": false,
               "type": "integer",
               "format": "int64"
-            },
+            }
           ],
           "responses": {
             "200": {
@@ -265,13 +222,7 @@
             "400": {
               "description": "Invalid input."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         },
         "put": {
           "tags": [
@@ -301,13 +252,7 @@
             "400": {
               "description": "Invalid input"
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/copy/{copyId}/": {
@@ -355,7 +300,7 @@
               "required": true,
               "type": "integer",
               "format": "int64"
-            },
+            }
           ],
           "responses": {
             "200": {
@@ -370,16 +315,10 @@
             "404": {
               "description": "Copy not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
-      "/copy/findByBookId/": {
+      "/copy/search/": {
         "get": {
           "tags": [
             "copy"
@@ -399,7 +338,7 @@
           ],
           "responses": {
             "200": {
-              "description": "The operation was successful."
+              "description": "The operation was successful.",
               "schema": {
                 "type": "array",
                 "items": {
@@ -439,13 +378,7 @@
             "400": {
               "description": "Invalid input."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/order/{orderId}/accept": {
@@ -479,13 +412,7 @@
             "404": {
               "description": "Order not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/order/{orderId}/decline": {
@@ -519,13 +446,7 @@
             "404": {
               "description": "Order not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/order/{orderId}/updateStatus": {
@@ -567,13 +488,7 @@
             "404": {
               "description": "order not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/order/{orderId}/sendReminder": {
@@ -614,13 +529,7 @@
             "404": {
               "description": "Order not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/user": {
@@ -715,13 +624,7 @@
             "default": {
               "description": "Successful operation."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/user/{username}": {
@@ -794,13 +697,7 @@
             "404": {
               "description": "User not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         },
         "delete": {
           "tags": [
@@ -831,13 +728,7 @@
             "404": {
               "description": "User not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/user/{username}/privateList": {
@@ -870,10 +761,10 @@
             },
             "400": {
               "description": "Invalid Request Body."
-            }
+            },
             "401": {
               "description": "Unaurthorized"
-            },
+            }
           }
         }
       },
@@ -912,13 +803,7 @@
             "404": {
               "description": "Not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         },
         "get": {
           "tags": [
@@ -960,13 +845,7 @@
             "404": {
               "description": "Not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/user/{username}/privateList/{privateListId}/addBooks": {
@@ -1020,13 +899,7 @@
             "404": {
               "description": "Not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       },
       "/user/{username}/privateList/{privateListId}/removeBooks": {
@@ -1080,13 +953,7 @@
             "404": {
               "description": "Not found."
             }
-          },
-          "security": [
-            {
-              "api_key": [
-              ]
-            }
-          ]
+          }
         }
       }
     },
