@@ -8,9 +8,9 @@ def start_service():
     return "Welcome to BookVector", 200
 
 
-@app.route('/swagger')
-def swagger_api():
-    return
+# @app.route('/v2')
+# def swagger_api():
+#     return render_template("")
 
 
 @app.route('/support')
