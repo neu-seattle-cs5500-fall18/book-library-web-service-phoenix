@@ -1,5 +1,5 @@
 from app import db
-
+import datetime
 
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -7,6 +7,12 @@ class Book(db.Model):
     category = db.Column(db.String, nullable=True)
     author = db.Column(db.DateTime, nullable=True)
     year = db.Column(db.Integer, nullable=True)
+
+    def parse_body(self, body):
+        self.title=body.get('title')
+        self.category =body.get('category') or None
+        self.author =body.get('author') or None
+        self.year =body.get('year') or None
 
     def __repr__(self):
         return '<Book %r>' % self.id
@@ -22,37 +28,81 @@ class Book(db.Model):
 
 
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, nullable=False)
+    username = db.Column(db.String, primary_key=True, unique=True)
     password = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False)
-    firstName = db.Column(db.String, nullable=True)
-    lastName = db.Column(db.String, nullable=True)
+    first_name = db.Column(db.String, nullable=True)
+    last_name = db.Column(db.String, nullable=True)
     phone = db.Column(db.String, nullable=True)
+    active = db.Column(db.Boolean, nullable=False, default=True)
+    authenticated = db.Column(db.Boolean, nullable=True, default=False)
+
+    def get_id(self):
+        return self.username
+
+    def is_active(self):
+        return self.active
+
+    def is_authenticated(self):
+        return
 
     def __repr__(self):
-        return '<Model %r>' % self.id
+        return '<User %r>' % self.username
+
+    def parse_body(self, body):
+        self.username =body.get('username')
+        self.password =body.get('password')
+        self.email =body.get('email') or None
+        self.first_name =body.get('first_name') or None
+        self.last_name =body.get('last_name') or None
+        self.phone =body.get('phone') or None
+
+    def serialize(self):
+        return {
+            'username': self.username,
+            'password': self.password,
+            'email': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'phone': self.phone
+        }
+
+
+class PrivateList(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user = db.Column(db.String, db.ForeignKey('user.username'), nullable=False)
+    name = db.Column(db.String, nullable=False)
+    books = db.Column(db.String, nullable=False)
+
+    def __repr__(self):
+        return '<PrivateList %r>' % self.id
+
+    def parse_body(self, user_id, body):
+        self.user = user_id
+        self.name =body.get('name') or None
+        self.books = str(set(body.get('books'))) or None
 
     def serialize(self):
         return {
             'id': self.id,
-            'username': self.username,
-            'password': self.password,
-            'email': self.email,
-            'firstName': self.firstName,
-            'lastName': self.lastName,
-            'phone': self.phone
+            'user': self.user,
+            'name': self.name,
+            'books': self.books,
         }
 
 
 class Copy(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.Column(db.String, db.ForeignKey('user.username'), nullable=False)
     book = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
     status = db.Column(db.Integer, nullable=False)
 
     def __repr__(self):
         return '<Copy %r>' % self.id
+
+    def parse_body(self, body):
+        self.user = body.get('user') or None
+        self.book =body.get('book') or None
 
     def serialize(self):
         return {
@@ -66,34 +116,33 @@ class Copy(db.Model):
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     copy = db.Column(db.Integer, db.ForeignKey('copy.id'), nullable=False)
-    borrowerId = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    copy_owner = db.Column(db.String, db.ForeignKey('user.username'), nullable=False)
+    borrower = db.Column(db.String, db.ForeignKey('user.username'), nullable=False)
     status = db.Column(db.Integer, nullable=False)
+    created = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    modified = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
+    expire = db.Column(db.DateTime, nullable=False)
 
     def __repr__(self):
         return '<Copy %r>' % self.id
+
+    def parse_body(self, body):
+        self.copy = body.get('copy') or None
+        self.borrower = body.get('borrower') or None
+        self.copy_owner = body.get('copy_owner') or None
+        self.expire = body.get('expire') or None
+
 
     def serialize(self):
         return {
             'id': self.id,
             'copy': self.copy,
-            'borrowerId': self.borrowerId,
-            'status': self.status
+            'copy_owner': self.copy_owner,
+            'borrower': self.borrower,
+            'status': self.status,
+            'created': self.created.strftime("%Y-%m-%d %H:%M:%S"),
+            'modified': self.modified.strftime("%Y-%m-%d %H:%M:%S"),
+            'expire': self.expire.strftime("%Y-%m-%d %H:%M:%S"),
         }
 
 
-class PrivateList(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    title = db.Column(db.String, nullable=False)
-    books = db.Column(db.String, nullable=False)
-
-    def __repr__(self):
-        return '<Copy %r>' % self.id
-
-    def serialize(self):
-        return {
-            'id': self.id,
-            'user': self.user,
-            'name': self.name,
-            'books': self.books,
-        }

@@ -1,4 +1,7 @@
 flask
+flask-login
+flask-sqlalchemy
+flask-restplus
 certifi==2018.8.24
 gunicorn==19.9.0
 pipenv==2018.7.1
