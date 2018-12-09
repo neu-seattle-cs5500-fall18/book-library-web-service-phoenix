@@ -49,13 +49,13 @@
             }
           ],
           "responses": {
-            "200": {
+            "201": {
               "description": "The operation was successful."
             },
             "404": {
               "description": "Book not found."
             },
-            "405": {
+            "400": {
               "description": "Invalid input."
             }
           }
@@ -455,7 +455,7 @@
         }
       },
       "/order/{orderId}/updateStatus": {
-        "post": {
+        "put": {
           "tags": [
             "order"
           ],
@@ -571,7 +571,7 @@
         }
       },
       "/user/login": {
-        "get": {
+        "post": {
           "tags": [
             "user"
           ],
@@ -615,7 +615,7 @@
         }
       },
       "/user/logout": {
-        "get": {
+        "delete": {
           "tags": [
             "user"
           ],

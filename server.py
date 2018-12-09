@@ -13,6 +13,7 @@ login_manager.init_app(app)
 db.create_all()
 db.session.commit()
 
+
 @app.route('/home')
 def home():
     return "<h1>User Home " + current_user.username + "</h1>"
@@ -22,7 +23,7 @@ def support():
     return "Please contact yu.jiah@husky.neu.edu; chen.xiany@husky.neu.edu", 200
 
 @api.route('/book')
-class Book(Resource) :
+class Book(Resource):
     def post(self):
         body = request.get_json()
         new_book = models.Book()
@@ -398,7 +399,7 @@ def login():
         ''')
 
 
-@app.route('/register' , methods = ['GET' , 'POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
