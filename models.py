@@ -1,11 +1,12 @@
-from app import db
+from db_server import db
+from constant import *
 import datetime
 
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
     category = db.Column(db.String, nullable=True)
-    author = db.Column(db.DateTime, nullable=True)
+    author = db.Column(db.String, nullable=True)
     year = db.Column(db.Integer, nullable=True)
 
     def parse_body(self, body):
@@ -118,7 +119,7 @@ class Order(db.Model):
     copy = db.Column(db.Integer, db.ForeignKey('copy.id'), nullable=False)
     copy_owner = db.Column(db.String, db.ForeignKey('user.username'), nullable=False)
     borrower = db.Column(db.String, db.ForeignKey('user.username'), nullable=False)
-    status = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.Integer, nullable=False, default=ORDER_STATUS_REQUESTED)
     created = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
     modified = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
     expire = db.Column(db.DateTime, nullable=False)
