@@ -8,8 +8,8 @@ import ast, datetime
 
 login_manager = LoginManager()
 login_manager.login_view = "login"
-
 api = Namespace('')
+
 book_vector = Api(title='Book Vector')
 book_vector.add_namespace(api)
 
@@ -41,7 +41,11 @@ class Home(Resource):
         return "Please contact yu.jiah@husky.neu.edu; chen.xiany@husky.neu.edu", 200
 
 
-@api.route('/book')
+book = Namespace("book", description="Book operations")
+book_vector.add_namespace(book)
+
+
+@book.route('')
 class Book(Resource):
     def post(self):
         body = request.get_json()
@@ -75,8 +79,8 @@ def query_book_by_id(book_id):
     return db.session.query(models.Book).filter_by(id=book_id).first()
 
 
-@api.route('/book/<book_id>')
-@api.doc(params={'book_id': 'id of a book'})
+@book.route('/<book_id>')
+@book.doc(params={'book_id': 'id of a book'})
 class Book(Resource):
     def get(self, book_id):
         a_book = query_book_by_id(book_id)
@@ -107,8 +111,12 @@ def query_user_by_name(username):
     return db.session.query(models.User).filter_by(username=username).first()
 
 
-@api.route('/user/<username>')
-@api.doc(params={'username': 'id of a user'})
+user = Namespace('user', description="User operations")
+book_vector.add_namespace(user)
+
+
+@user.route('/<username>')
+@user.doc(params={'username': 'id of a user'})
 class User(Resource):
     def get(self, username):
         user = query_user_by_name(username)
@@ -143,8 +151,8 @@ def query_private_list_by_id(username, private_list_name):
     return db.session.query(models.PrivateList).filter_by(user=username, name=private_list_name).first()
 
 
-@api.route('/user/<username>/privatelist')
-@api.doc(params={'username': 'name of a user'})
+@user.route('/<username>/privatelist')
+@user.doc(params={'username': 'name of a user'})
 class PrivateList(Resource):
     def post(self, username):
         user = query_user_by_name(username)
@@ -183,9 +191,9 @@ class PrivateList(Resource):
         return out, 201
 
 
-@api.route('/user/<username>/privatelist/<private_list_name>')
-@api.doc(params={'username': 'id of a user',
-                 'private_list_name': 'the private list name owned by the user'})
+@user.route('/<username>/privatelist/<private_list_name>')
+@user.doc(params={'username': 'id of a user',
+                  'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def delete(self, username, private_list_name):
         user = query_user_by_name(username)
@@ -212,7 +220,9 @@ class PrivateList(Resource):
         return list.serialize(), 200
 
 
-@api.route('/user/<username>/privatelist/<private_list_name>/addbooks')
+@user.route('/<username>/privatelist/<private_list_name>/addbooks')
+@user.doc(params={'username': "name of a user",
+                  'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def post(self, username, private_list_name):
         user = query_user_by_name(username)
@@ -239,7 +249,9 @@ class PrivateList(Resource):
         return list.serialize(), 200
 
 
-@api.route('/user/<username>/privatelist/<private_list_name>/removebooks')
+@user.route('/<username>/privatelist/<private_list_name>/removebooks')
+@user.doc(params={'username': "name of a user",
+                  'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def post(self, username, private_list_name):
         user = query_user_by_name(username)
@@ -260,7 +272,11 @@ class PrivateList(Resource):
         return list.serialize(), 200
 
 
-@api.route('/copy')
+copy = Namespace('copy', description="copy operations")
+book_vector.add_namespace(copy)
+
+
+@copy.route('/')
 class Copy(Resource):
     def post(self):
         body = request.get_json()
@@ -298,8 +314,8 @@ class Copy(Resource):
         return out, 201
 
 
-@api.route('/copy/<copy_id>')
-@api.doc(params={'copy_id': 'id of a copy'})
+@copy.route('/<copy_id>')
+@copy.doc(params={'copy_id': 'id of a copy'})
 class Copy(Resource):
     def get(self, copy_id):
         copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
@@ -318,7 +334,8 @@ class Copy(Resource):
         return "copy has been deleted", 200
 
 
-@api.route('/copy/<copy_id>/updatestatus')
+@copy.route('/<copy_id>/updatestatus')
+@copy.doc(params={'copy_id': 'id of a copy'})
 class Copy(Resource):
     def put(self, copy_id):
         body = request.get_json()
@@ -333,7 +350,11 @@ class Copy(Resource):
         return copy.serialize(), 200
 
 
-@api.route('/order')
+order = Namespace('order', description="Order operations")
+book_vector.add_namespace(order)
+
+
+@order.route('/')
 class Order(Resource):
     def post(self):
         body = request.get_json()
@@ -383,6 +404,7 @@ class Order(Resource):
             out.append(order.serialize())
         return out, 201
 
+
 def change_order_status(order_id, status):
     order = db.session.query(models.Order).filter_by(id=order_id).first()
     if order is not None:
@@ -393,8 +415,8 @@ def change_order_status(order_id, status):
     return order
 
 
-@api.route('/order/<order_id>/accept')
-@api.doc(params={'order_id': 'id of an order'})
+@order.route('/<order_id>/accept')
+@order.doc(params={'order_id': 'id of an order'})
 class Order(Resource):
     def put(self, order_id):
         order = change_order_status(order_id, ORDER_STATUS_ACCPETED)
@@ -406,8 +428,8 @@ class Order(Resource):
         return order.serialize(), 201
 
 
-@api.route('/order/<order_id>/decline')
-@api.doc(params={'order_id': 'id of an order'})
+@order.route('/<order_id>/decline')
+@order.doc(params={'order_id': 'id of an order'})
 class Order(Resource):
     def put(self, order_id):
         order = change_order_status(order_id, ORDER_STATUS_DECLINED)
@@ -418,8 +440,8 @@ class Order(Resource):
         return order.serialize(), 201
 
 
-@api.route('/order/<order_id>')
-@api.doc(params={'order_id': 'id of an order'})
+@order.route('/<order_id>')
+@order.doc(params={'order_id': 'id of an order'})
 class Order(Resource):
     def get(self, order_id):
         order = db.session.query(models.Order).filter_by(id=order_id).first()
@@ -428,7 +450,11 @@ class Order(Resource):
         return order.serialize(), 200
 
 
-@api.route('/login')
+login = Namespace('login', description="Login operations")
+book_vector.add_namespace(login)
+
+
+@login.route('')
 class Login(Resource):
     def post(self):
         if request.form:
@@ -459,7 +485,11 @@ class Login(Resource):
             return abort(401)
 
 
-@api.route('/register')
+register = Namespace('register', "Register operations")
+book_vector.add_namespace(register)
+
+
+@register.route('/')
 class Register(Resource):
     def post(self):
         username = request.form['username']
@@ -495,7 +525,11 @@ class Register(Resource):
         ''')
 
 
-@api.route('/logout')
+logout = Namespace('logout', description="Logout operations")
+book_vector.add_namespace(logout)
+
+
+@logout.route('/')
 class Logout(Resource):
     def post(self):
         logout_user()
@@ -505,7 +539,12 @@ class Logout(Resource):
         logout_user()
         return Response("Logout Successfully")
 
-@api.route('/reminder')
+
+reminder = Namespace('reminder', description="Send reminder operations")
+book_vector.add_namespace(reminder)
+
+
+@reminder.route('/')
 class Reminder(Resource):
     def get(self):
         return "Sent reminders", 201
