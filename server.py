@@ -12,7 +12,6 @@ api = Namespace('')
 
 book_vector = Api(title='Book Vector', description="A book library service")
 book_vector.add_namespace(api)
-book_vector.base_url = "https://book-vector.herokuapp.com"
 
 
 # callback to reload the user object
