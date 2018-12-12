@@ -374,6 +374,10 @@ class Order(Resource):
         if copy_owner is not None:
             orders = orders.filter_by(copy_owner=copy_owner)
 
+        status = request.args.get('status')
+        if status is not None:
+            orders = orders.filter_by(status=status)
+
         out = []
         for order in orders:
             out.append(order.serialize())
@@ -500,3 +504,8 @@ class Logout(Resource):
     def get(self):
         logout_user()
         return Response("Logout Successfully")
+
+@api.route('/reminder')
+class Reminder(Resource):
+    def get(self):
+        return "Sent reminders", 201
