@@ -10,7 +10,7 @@ login_manager = LoginManager()
 login_manager.login_view = "login"
 api = Namespace('')
 
-book_vector = Api(title='Book Vector')
+book_vector = Api(title='Book Vector', description="A book library service")
 book_vector.add_namespace(api)
 
 
@@ -48,6 +48,7 @@ book_vector.add_namespace(book)
 @book.route('')
 class Book(Resource):
     def post(self):
+        """Add a book to the library"""
         body = request.get_json()
         new_book = models.Book()
         new_book.parse_body(body)
@@ -56,6 +57,7 @@ class Book(Resource):
         return new_book.serialize(), 201
 
     def get(self):
+        """Get all of the books"""
         books = db.session.query(models.Book)
         year = request.args.get('year')
         if year is not None:
@@ -83,12 +85,14 @@ def query_book_by_id(book_id):
 @book.doc(params={'book_id': 'id of a book'})
 class Book(Resource):
     def get(self, book_id):
+        """Get a book by given an ID"""
         a_book = query_book_by_id(book_id)
         if a_book is None:
             return 'Book does not exit', 404
         return a_book.serialize(), 200
 
     def put(self, book_id):
+        """Update a book by provide the id and information of the book"""
         a_book = query_book_by_id(book_id)
         if a_book is None:
             return 'Book does not exit', 404
@@ -98,7 +102,8 @@ class Book(Resource):
         db.session.commit()
         return a_book.serialize(), 200
 
-    def delete(self, book_id):
+    def delete(self, book_id)
+        """Delete a book by given an book id"""
         a_book = query_book_by_id(book_id)
         if a_book is None:
             return 'Book does not exit', 404
@@ -119,12 +124,14 @@ book_vector.add_namespace(user)
 @user.doc(params={'username': 'id of a user'})
 class User(Resource):
     def get(self, username):
+        """Get a user's information"""
         user = query_user_by_name(username)
         if user is None:
             return 'User does not exit', 404
         return user.serialize(), 200
 
     def put(self, username):
+        """"Update a user information by providing json info"""
         user = query_user_by_name(username)
         if user is None:
             return 'User does not exit', 404
@@ -137,6 +144,7 @@ class User(Resource):
         return user.serialize(), 200
 
     def delete(self, username):
+        """Delete a user by providing a user name"""
         user = query_user_by_name(username)
         if user is None:
             return 'User does not exit', 404
@@ -155,6 +163,7 @@ def query_private_list_by_id(username, private_list_name):
 @user.doc(params={'username': 'name of a user'})
 class PrivateList(Resource):
     def post(self, username):
+        """Add a private book list to a user"""
         user = query_user_by_name(username)
         if user is None:
             return 'User does not exit', 404
@@ -179,6 +188,7 @@ class PrivateList(Resource):
         return new_list.serialize(), 201
 
     def get(self, username):
+        """Get all private list of books for a user"""
         user = query_user_by_name(username)
         if user is None:
             return 'User does not exit', 404
@@ -196,6 +206,7 @@ class PrivateList(Resource):
                   'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def delete(self, username, private_list_name):
+        """Delete a user's private list"""
         user = query_user_by_name(username)
         if user is None:
             return 'User does not exit', 404
@@ -209,6 +220,7 @@ class PrivateList(Resource):
         return "PrivateList has been deleted", 200
 
     def get(self, username, private_list_name):
+        """Get a private list of books for a user"""
         user = query_user_by_name(username)
         if user is None:
             return 'User does not exit', 404
@@ -225,6 +237,7 @@ class PrivateList(Resource):
                   'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def post(self, username, private_list_name):
+        """Add books to a private lsit of books owned by a user"""
         user = query_user_by_name(username)
         if user is None:
             return 'User does not exit', 404
@@ -254,6 +267,7 @@ class PrivateList(Resource):
                   'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def post(self, username, private_list_name):
+        """Remove books from a private list owned by a user"""
         user = query_user_by_name(username)
         if user is None:
             return 'User does not exit', 404
@@ -279,6 +293,7 @@ book_vector.add_namespace(copy)
 @copy.route('/')
 class Copy(Resource):
     def post(self):
+        """add copy of a book to a user"""
         body = request.get_json()
         username = body.get('user')
         user = query_user_by_name(username)
@@ -297,6 +312,7 @@ class Copy(Resource):
         return new_copy.serialize(), 201
 
     def get(self):
+        """Get all books/copies owned by a user"""
         copies = db.session.query(models.Copy)
         book_id = request.args.get('book')
         if book_id is not None:
@@ -318,12 +334,14 @@ class Copy(Resource):
 @copy.doc(params={'copy_id': 'id of a copy'})
 class Copy(Resource):
     def get(self, copy_id):
+        """Get the book/copy information of a book"""
         copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
         if copy is None:
             return 'copy is not found', 404
         return copy.serialize(), 200
 
     def delete(self, copy_id):
+        """Delete a copy of books"""
         copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
         if copy is None:
             return 'copy is not found', 404
@@ -338,6 +356,7 @@ class Copy(Resource):
 @copy.doc(params={'copy_id': 'id of a copy'})
 class Copy(Resource):
     def put(self, copy_id):
+        """Update the status of a copy of book"""
         body = request.get_json()
         copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
         if copy is None:
@@ -357,6 +376,7 @@ book_vector.add_namespace(order)
 @order.route('/')
 class Order(Resource):
     def post(self):
+        """Make an order of book"""
         body = request.get_json()
         borrower = body.get('borrower')
         borrower = query_user_by_name(borrower)
@@ -382,6 +402,7 @@ class Order(Resource):
         return new_order.serialize(), 201
 
     def get(self):
+        """Get all information about orders"""
         orders = db.session.query(models.Order)
         copy = request.args.get('copy')
         if copy is not None:
@@ -419,6 +440,7 @@ def change_order_status(order_id, status):
 @order.doc(params={'order_id': 'id of an order'})
 class Order(Resource):
     def put(self, order_id):
+        """Accept an order"""
         order = change_order_status(order_id, ORDER_STATUS_ACCPETED)
         if order is None:
             return 'Order ID not found ' + str(order_id), 409
@@ -432,6 +454,7 @@ class Order(Resource):
 @order.doc(params={'order_id': 'id of an order'})
 class Order(Resource):
     def put(self, order_id):
+        """Decline an order"""
         order = change_order_status(order_id, ORDER_STATUS_DECLINED)
         if order is None:
             return 'Order ID not found ' + str(order_id), 409
@@ -444,6 +467,7 @@ class Order(Resource):
 @order.doc(params={'order_id': 'id of an order'})
 class Order(Resource):
     def get(self, order_id):
+        """Get information about an order"""
         order = db.session.query(models.Order).filter_by(id=order_id).first()
         if order is None:
             return 'Order does not exit', 404
@@ -457,6 +481,7 @@ book_vector.add_namespace(login)
 @login.route('')
 class Login(Resource):
     def post(self):
+        """Login as a user"""
         if request.form:
             username = request.form['username']
             password = request.form['password']
@@ -467,6 +492,7 @@ class Login(Resource):
         return self.try_login(username, password)
 
     def get(self):
+        """Get the login form"""
         return Response('''
             <form action="" method="post">
                 <p><input type=text name=username>
@@ -492,6 +518,7 @@ book_vector.add_namespace(register)
 @register.route('/')
 class Register(Resource):
     def post(self):
+        """Register as a user"""
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
@@ -512,6 +539,7 @@ class Register(Resource):
         return Response("Registered Successfully")
 
     def get(self):
+        """Get user registration form"""
         return Response('''
             <form action="" method="post">
             <p><input type=text name=username placeholder="Enter username">
@@ -532,10 +560,12 @@ book_vector.add_namespace(logout)
 @logout.route('/')
 class Logout(Resource):
     def post(self):
+        """Current user logout"""
         logout_user()
         return Response("Logout Successfully")
 
     def get(self):
+        """Current user logout"""
         logout_user()
         return Response("Logout Successfully")
 
