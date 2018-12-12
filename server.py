@@ -102,7 +102,7 @@ class Book(Resource):
         db.session.commit()
         return a_book.serialize(), 200
 
-    def delete(self, book_id)
+    def delete(self, book_id):
         """Delete a book by given an book id"""
         a_book = query_book_by_id(book_id)
         if a_book is None:
