@@ -13,10 +13,12 @@ api = Namespace('')
 book_vector = Api(title='Book Vector')
 book_vector.add_namespace(api)
 
+
 # callback to reload the user object
 @login_manager.user_loader
 def load_user(username):
     return query_user_by_name(username)
+
 
 def invalid_user(username):
     try:
@@ -26,18 +28,21 @@ def invalid_user(username):
     except:
         return True
 
+
 @api.route('/home')
-class Home(Resource) :
+class Home(Resource):
     def get(self):
         return "User Home: " + current_user.username
 
+
 @api.route('/support')
-class Home(Resource) :
+class Home(Resource):
     def get(self):
         return "Please contact yu.jiah@husky.neu.edu; chen.xiany@husky.neu.edu", 200
 
+
 @api.route('/book')
-class Book(Resource) :
+class Book(Resource):
     def post(self):
         body = request.get_json()
         new_book = models.Book()
@@ -69,6 +74,7 @@ class Book(Resource) :
 def query_book_by_id(book_id):
     return db.session.query(models.Book).filter_by(id=book_id).first()
 
+
 @api.route('/book/<book_id>')
 @api.doc(params={'book_id': 'id of a book'})
 class Book(Resource):
@@ -96,8 +102,10 @@ class Book(Resource):
         db.session.commit()
         return "book has been deleted", 200
 
+
 def query_user_by_name(username):
     return db.session.query(models.User).filter_by(username=username).first()
+
 
 @api.route('/user/<username>')
 @api.doc(params={'username': 'id of a user'})
@@ -131,9 +139,9 @@ class User(Resource):
         return "user has been deleted", 200
 
 
-
 def query_private_list_by_id(username, private_list_name):
     return db.session.query(models.PrivateList).filter_by(user=username, name=private_list_name).first()
+
 
 @api.route('/user/<username>/privatelist')
 @api.doc(params={'username': 'name of a user'})
@@ -154,7 +162,7 @@ class PrivateList(Resource):
 
         for book_id in body.get('books'):
             if query_book_by_id(book_id) is None:
-                return 'Book ID not found '+ str(book_id), 409
+                return 'Book ID not found ' + str(book_id), 409
 
         new_list = models.PrivateList()
         new_list.parse_body(username, body)
@@ -173,7 +181,6 @@ class PrivateList(Resource):
         for copy in db.session.query(models.PrivateList).filter_by(user=username):
             out.append(copy.serialize())
         return out, 201
-
 
 
 @api.route('/user/<username>/privatelist/<private_list_name>')
@@ -221,7 +228,7 @@ class PrivateList(Resource):
 
         for book_id in body.get('books'):
             if query_book_by_id(book_id) is None:
-                return 'Book ID not found '+ str(book_id), 409
+                return 'Book ID not found ' + str(book_id), 409
 
         old_list = ast.literal_eval(list.books)
         if old_list is not None:
@@ -230,6 +237,7 @@ class PrivateList(Resource):
             list.books = body.get('books')
         db.session.commit()
         return list.serialize(), 200
+
 
 @api.route('/user/<username>/privatelist/<private_list_name>/removebooks')
 class PrivateList(Resource):
@@ -281,7 +289,9 @@ class Copy(Resource):
         username = request.args.get('user')
         if username is not None:
             copies = copies.filter_by(user=username)
-
+        status = request.args.get("status")
+        if status is not None:
+            copies = copies.filter_by(status=status)
         out = []
         for copy in copies:
             out.append(copy.serialize())
@@ -323,7 +333,6 @@ class Copy(Resource):
         return copy.serialize(), 200
 
 
-
 @api.route('/order')
 class Order(Resource):
     def post(self):
@@ -351,6 +360,24 @@ class Order(Resource):
         db.session.commit()
         return new_order.serialize(), 201
 
+    def get(self):
+        orders = db.session.query(models.Order)
+        copy = request.args.get('copy')
+        if copy is not None:
+            orders = orders.filter_by(copy=copy)
+
+        borrower = request.args.get('borrower')
+        if borrower is not None:
+            orders = orders.filter_by(borrower=borrower)
+
+        copy_owner = request.args.get('copy_owner')
+        if copy_owner is not None:
+            orders = orders.filter_by(copy_owner=copy_owner)
+
+        out = []
+        for order in orders:
+            out.append(order.serialize())
+        return out, 201
 
 def change_order_status(order_id, status):
     order = db.session.query(models.Order).filter_by(id=order_id).first()
@@ -404,8 +431,8 @@ class Login(Resource):
             username = request.form['username']
             password = request.form['password']
         else:
-            username = request.args.get('username') #form['username']
-            password = request.args.get('password') #form['password']
+            username = request.args.get('username')  # form['username']
+            password = request.args.get('password')  # form['password']
 
         return self.try_login(username, password)
 
