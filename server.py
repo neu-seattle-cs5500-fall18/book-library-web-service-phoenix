@@ -41,11 +41,11 @@ class Home(Resource):
         return "Please contact yu.jiah@husky.neu.edu; chen.xiany@husky.neu.edu", 200
 
 
-book = Namespace("book", description="Book operations")
-book_vector.add_namespace(book)
+book_api = Namespace("book", description="Book operations")
+book_vector.add_namespace(book_api)
 
 
-@book.route('')
+@book_api.route('')
 class Book(Resource):
     def post(self):
         """Add a book to the library"""
@@ -81,8 +81,8 @@ def query_book_by_id(book_id):
     return db.session.query(models.Book).filter_by(id=book_id).first()
 
 
-@book.route('/<book_id>')
-@book.doc(params={'book_id': 'id of a book'})
+@book_api.route('/<book_id>')
+@book_api.doc(params={'book_id': 'id of a book'})
 class Book(Resource):
     def get(self, book_id):
         """Get a book by given an ID"""
@@ -116,12 +116,12 @@ def query_user_by_name(username):
     return db.session.query(models.User).filter_by(username=username).first()
 
 
-user = Namespace('user', description="User operations")
-book_vector.add_namespace(user)
+user_api = Namespace('user', description="User operations")
+book_vector.add_namespace(user_api)
 
 
-@user.route('/<username>')
-@user.doc(params={'username': 'id of a user'})
+@user_api.route('/<username>')
+@user_api.doc(params={'username': 'id of a user'})
 class User(Resource):
     def get(self, username):
         """Get a user's information"""
@@ -159,8 +159,8 @@ def query_private_list_by_id(username, private_list_name):
     return db.session.query(models.PrivateList).filter_by(user=username, name=private_list_name).first()
 
 
-@user.route('/<username>/privatelist')
-@user.doc(params={'username': 'name of a user'})
+@user_api.route('/<username>/privatelist')
+@user_api.doc(params={'username': 'name of a user'})
 class PrivateList(Resource):
     def post(self, username):
         """Add a private book list to a user"""
@@ -201,9 +201,9 @@ class PrivateList(Resource):
         return out, 201
 
 
-@user.route('/<username>/privatelist/<private_list_name>')
-@user.doc(params={'username': 'id of a user',
-                  'private_list_name': 'the private list name owned by the user'})
+@user_api.route('/<username>/privatelist/<private_list_name>')
+@user_api.doc(params={'username': 'id of a user',
+                     'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def delete(self, username, private_list_name):
         """Delete a user's private list"""
@@ -232,9 +232,9 @@ class PrivateList(Resource):
         return list.serialize(), 200
 
 
-@user.route('/<username>/privatelist/<private_list_name>/addbooks')
-@user.doc(params={'username': "name of a user",
-                  'private_list_name': 'the private list name owned by the user'})
+@user_api.route('/<username>/privatelist/<private_list_name>/addbooks')
+@user_api.doc(params={'username': "name of a user",
+                     'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def post(self, username, private_list_name):
         """Add books to a private lsit of books owned by a user"""
@@ -262,9 +262,9 @@ class PrivateList(Resource):
         return list.serialize(), 200
 
 
-@user.route('/<username>/privatelist/<private_list_name>/removebooks')
-@user.doc(params={'username': "name of a user",
-                  'private_list_name': 'the private list name owned by the user'})
+@user_api.route('/<username>/privatelist/<private_list_name>/removebooks')
+@user_api.doc(params={'username': "name of a user",
+                     'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def post(self, username, private_list_name):
         """Remove books from a private list owned by a user"""
@@ -286,11 +286,11 @@ class PrivateList(Resource):
         return list.serialize(), 200
 
 
-copy = Namespace('copy', description="copy operations")
-book_vector.add_namespace(copy)
+copy_api = Namespace('copy', description="copy operations")
+book_vector.add_namespace(copy_api)
 
 
-@copy.route('/')
+@copy_api.route('')
 class Copy(Resource):
     def post(self):
         """add copy of a book to a user"""
@@ -307,6 +307,7 @@ class Copy(Resource):
         new_copy = models.Copy()
         new_copy.parse_body(body)
         new_copy.status = BOOK_COPY_STATUS_AVAILABLE
+        new_copy.note = 'new book'
         db.session.add(new_copy)
         db.session.commit()
         return new_copy.serialize(), 201
@@ -330,8 +331,8 @@ class Copy(Resource):
         return out, 201
 
 
-@copy.route('/<copy_id>')
-@copy.doc(params={'copy_id': 'id of a copy'})
+@copy_api.route('/<copy_id>')
+@copy_api.doc(params={'copy_id': 'id of a copy'})
 class Copy(Resource):
     def get(self, copy_id):
         """Get the book/copy information of a book"""
@@ -352,8 +353,8 @@ class Copy(Resource):
         return "copy has been deleted", 200
 
 
-@copy.route('/<copy_id>/updatestatus')
-@copy.doc(params={'copy_id': 'id of a copy'})
+@copy_api.route('/<copy_id>/updatestatus')
+@copy_api.doc(params={'copy_id': 'id of a copy'})
 class Copy(Resource):
     def put(self, copy_id):
         """Update the status of a copy of book"""
@@ -364,16 +365,61 @@ class Copy(Resource):
         if invalid_user(copy.user):
             return 'Unauthorized User', 401
         copy.status = body.get('status')
+        if copy.status == BOOK_COPY_STATUS_AVAILABLE:
+            copy.note = NOTE_AVAILABLE
+        elif copy.status == BOOK_COPY_STATUS_UNAVAILABLE:
+            copy.note = NOTE_NOT_AVAILABLE
+        elif copy.status == BOOK_COPY_STATUS_DEMAGED:
+            copy.note = NOTE_DAMAGE
+        else:
+            copy.note = NOTE_LOST
         db.session.add(copy)
         db.session.commit()
         return copy.serialize(), 200
 
 
-order = Namespace('order', description="Order operations")
-book_vector.add_namespace(order)
+@copy_api.route('/<copy_id>/reference')
+@copy_api.doc(params={'copy_id': 'id of a copy'})
+class Copy(Resource):
+    def get(self, copy_id):
+        """Get the node of a copy of a book"""
+        copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
+        if copy is None:
+            return 'copy is not found', 404
+        if invalid_user(copy.user):
+            return 'Unauthorized User', 401
+        return 'note for book copy of {} is: {}'.format(copy.id, copy.note), 200
+
+    def post(self, copy_id):
+        """Add a note to a copy of a book"""
+        copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
+        if copy is None:
+            return 'copy is not found', 404
+        if invalid_user(copy.user):
+            return 'Unauthorized User', 401
+        note = request.get_json()
+        copy.note = note.get('note')
+        db.session.commit()
+        return 'A note \"{}\" has been added to book copy of {}'.format(copy.note, copy_id), 200
+
+    def put(self, copy_id):
+        """Update a note for a copy of a book"""
+        copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
+        if copy is None:
+            return 'copy is not found', 404
+        if invalid_user(copy.user):
+            return 'Unauthorized User', 401
+        note = request.get_json()
+        copy.note = note
+        db.session.commit()
+        return 'node for book copy of {} has been updated: {}'.format(copy_id, note), 200
 
 
-@order.route('/')
+order_api = Namespace('order', description="Order operations")
+book_vector.add_namespace(order_api)
+
+
+@order_api.route('')
 class Order(Resource):
     def post(self):
         """Make an order of book"""
@@ -388,12 +434,13 @@ class Order(Resource):
         copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
         if copy is None:
             return 'Copy ID not found ' + str(copy_id), 409
-
+        if copy.status == BOOK_COPY_STATUS_UNAVAILABLE:
+            return NOTE_NOT_AVAILABLE, 400
         copy_owner = body.get('copy_owner')
         owner = query_user_by_name(copy_owner)
         if owner is None:
             return 'Copy owner not found ' + copy_owner, 409
-
+        copy.note = 'This copy is requested by {}'.format(copy_owner)
         new_order = models.Order()
         new_order.parse_body(body)
         new_order.status = ORDER_STATUS_REQUESTED
@@ -436,8 +483,8 @@ def change_order_status(order_id, status):
     return order
 
 
-@order.route('/<order_id>/accept')
-@order.doc(params={'order_id': 'id of an order'})
+@order_api.route('/<order_id>/accept')
+@order_api.doc(params={'order_id': 'id of an order'})
 class Order(Resource):
     def put(self, order_id):
         """Accept an order"""
@@ -446,12 +493,15 @@ class Order(Resource):
             return 'Order ID not found ' + str(order_id), 409
         elif invalid_user(order.copy_owner):
             return 'Unauthorized User', 401
-
+        copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
+        copy.note = NOTE_NOT_AVAILABLE + " to {}".format(order.borrower)
+        copy.status = BOOK_COPY_STATUS_UNAVAILABLE
+        db.session.commit()
         return order.serialize(), 201
 
 
-@order.route('/<order_id>/decline')
-@order.doc(params={'order_id': 'id of an order'})
+@order_api.route('/<order_id>/decline')
+@order_api.doc(params={'order_id': 'id of an order'})
 class Order(Resource):
     def put(self, order_id):
         """Decline an order"""
@@ -460,11 +510,15 @@ class Order(Resource):
             return 'Order ID not found ' + str(order_id), 409
         elif invalid_user(order.copy_owner):
             return 'Unauthorized User', 401
+        copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
+        copy.note = "The book is rejected to loan to {}".format(order.borrower)
+        copy.status = BOOK_COPY_STATUS_AVAILABLE
+        db.session.commit()
         return order.serialize(), 201
 
 
-@order.route('/<order_id>')
-@order.doc(params={'order_id': 'id of an order'})
+@order_api.route('/<order_id>')
+@order_api.doc(params={'order_id': 'id of an order'})
 class Order(Resource):
     def get(self, order_id):
         """Get information about an order"""
@@ -474,11 +528,11 @@ class Order(Resource):
         return order.serialize(), 200
 
 
-login = Namespace('login', description="Login operations")
-book_vector.add_namespace(login)
+login_api = Namespace('login', description="Login operations")
+book_vector.add_namespace(login_api)
 
 
-@login.route('')
+@login_api.route('')
 class Login(Resource):
     def post(self):
         """Login as a user"""
@@ -511,11 +565,11 @@ class Login(Resource):
             return abort(401)
 
 
-register = Namespace('register', "Register operations")
-book_vector.add_namespace(register)
+register_api = Namespace('register', "Register operations")
+book_vector.add_namespace(register_api)
 
 
-@register.route('/')
+@register_api.route('/')
 class Register(Resource):
     def post(self):
         """Register as a user"""
@@ -553,11 +607,11 @@ class Register(Resource):
         ''')
 
 
-logout = Namespace('logout', description="Logout operations")
-book_vector.add_namespace(logout)
+logout_api = Namespace('logout', description="Logout operations")
+book_vector.add_namespace(logout_api)
 
 
-@logout.route('/')
+@logout_api.route('/')
 class Logout(Resource):
     def post(self):
         """Current user logout"""
@@ -570,11 +624,11 @@ class Logout(Resource):
         return Response("Logout Successfully")
 
 
-reminder = Namespace('reminder', description="Send reminder operations")
-book_vector.add_namespace(reminder)
+reminder_api = Namespace('reminder', description="Send reminder operations")
+book_vector.add_namespace(reminder_api)
 
 
-@reminder.route('/')
+@reminder_api.route('/')
 class Reminder(Resource):
     def get(self):
         return "Sent reminders", 201

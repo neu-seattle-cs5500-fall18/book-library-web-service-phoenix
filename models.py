@@ -97,20 +97,22 @@ class Copy(db.Model):
     user = db.Column(db.String, db.ForeignKey('user.username'), nullable=False)
     book = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
     status = db.Column(db.Integer, nullable=False)
+    note = db.Column(db.String, nullable=False)
 
     def __repr__(self):
         return '<Copy %r>' % self.id
 
     def parse_body(self, body):
         self.user = body.get('user') or None
-        self.book =body.get('book') or None
+        self.book = body.get('book') or None
 
     def serialize(self):
         return {
             'id': self.id,
             'user': self.user,
             'book': self.book,
-            'status': self.status
+            'status': self.status,
+            'node': self.note
         }
 
 
