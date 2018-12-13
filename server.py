@@ -705,9 +705,9 @@ book_vector.add_namespace(register_api)
 
 
 @register_api.route('')
-@register_api.response(409, 'User existed')
-@register_api.response(201, "Registered Successfully")
 class Register(Resource):
+    @register_api.response(201, "Registered Successfully")
+    @register_api.response(409, 'User existed')
     def post(self):
         """Register as a user"""
         username = request.form['username']
@@ -727,7 +727,7 @@ class Register(Resource):
                                phone=phone or None)
         db.session.add(new_user)
         db.session.commit()
-        return "Registered Successfully", 201
+        return Response("Registered Successfully")
 
     @register_api.response(200, 'Register form get')
     def get(self):
@@ -779,9 +779,11 @@ class Reminder(Resource):
         try:
             for record in toSend:
                 email = query_user_by_name(record.borrower).email
+                if email is None:
+                    continue
                 book_copy = query_copy_by_id(record.copy)
                 book = query_book_by_id(book_copy.book)
-                check = EmailSender.send_email(email, record.borrower, book.title, record.expire)
+                EmailSender.send_email(email, record.borrower, book.title, record.expire)
             return 'Reminders sent successfully!', 201
         except Exception as e:
             return 'Error in sending reminders', 404
