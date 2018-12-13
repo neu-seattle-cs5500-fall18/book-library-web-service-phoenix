@@ -12,7 +12,7 @@ login_manager = LoginManager()
 login_manager.login_view = "login"
 api = Namespace('')
 
-book_vector = Api(title='Book Vector', description="A book library service")
+book_vector = Api(title='Book Vector', version='2.0', description="A book library service by Team Phoenix")
 book_vector.add_namespace(api)
 
 
@@ -48,28 +48,28 @@ book_vector.add_namespace(book_api)
 
 
 @book_api.route('')
+@book_api.response(200, 'success')
+@book_api.response(400, 'Bad request')
 class Book(Resource):
     def post(self):
         """Add a book to the library"""
         body = request.get_json()
         new_book = models.Book()
-        new_book.title = body.get('title')
-        new_book.category = body.get('category') or None
-        new_book.author = body.get('author') or None
-        new_book.year = body.get('year') or None
-
-        # new_book.parse_body(body)
+        new_book.parse_body(body)
         db.session.add(new_book)
         db.session.commit()
         return new_book.serialize(), 201
 
     def get(self):
-        """get all the books information"""
+        """get all the books' information"""
         books = db.session.query(models.Book)
         return [book.serialize() for book in books], 200
 
 
 @book_api.route('/search')
+@book_api.response(200, 'success')
+@book_api.response(404, 'info not found')
+@book_api.response(416, 'request range required')
 class Book(Resource):
     def get(self):
         """search a book by year/category/author or combination search"""
@@ -88,7 +88,7 @@ class Book(Resource):
         year1 = request.args.get('year1')
         year2 = request.args.get('year2')
         if year1 is None and year2 is not None or (year2 is None and year1 is not None):
-            return 'Search between years should provide year1 and year2', 400
+            return 'Search between years should provide year1 and year2', 416
         if year1 is not None and year2 is not None:
             books = db.session.query(models.Book).filter(models.Book.year >= year1, models.Book.year <= year2)
         return [book.serialize() for book in books], 200
@@ -100,6 +100,8 @@ def query_book_by_id(book_id):
 
 @book_api.route('/<book_id>')
 @book_api.doc(params={'book_id': 'id of a book'})
+@book_api.response(200, 'success')
+@book_api.response(404, 'Id not found')
 class Book(Resource):
     def get(self, book_id):
         """Get a book by given an ID"""
@@ -139,14 +141,16 @@ book_vector.add_namespace(user_api)
 
 @user_api.route('/<username>')
 @user_api.doc(params={'username': 'id of a user'})
+@user_api.response(404, 'User not exist')
 class User(Resource):
     def get(self, username):
         """Get a user's information"""
         user = query_user_by_name(username)
         if user is None:
-            return 'User does not exit', 404
+            return 'User does not exist', 404
         return user.serialize(), 200
 
+    @user_api.response(401, 'Unauthorized user')
     def put(self, username):
         """"Update a user information by providing json info"""
         user = query_user_by_name(username)
@@ -160,6 +164,7 @@ class User(Resource):
         db.session.commit()
         return user.serialize(), 200
 
+    @user_api.response(401, 'Unauthorized user')
     def delete(self, username):
         """Delete a user by providing a user name"""
         user = query_user_by_name(username)
@@ -178,12 +183,17 @@ def query_private_list_by_id(username, private_list_name):
 
 @user_api.route('/<username>/privatelist')
 @user_api.doc(params={'username': 'name of a user'})
+@user_api.response(404, 'User does not exist')
+@user_api.response(401, 'Unauthorized User')
 class PrivateList(Resource):
+    @user_api.response(409, 'List name already exists')
+    @user_api.response(404, 'Book id not found')
+    @user_api.response(201, 'Post successful')
     def post(self, username):
         """Add a private book list to a user"""
         user = query_user_by_name(username)
         if user is None:
-            return 'User does not exit', 404
+            return 'User does not exist', 404
         if invalid_user(username):
             return 'Unauthorized User', 401
         body = request.get_json()
@@ -196,7 +206,7 @@ class PrivateList(Resource):
 
         for book_id in body.get('books'):
             if query_book_by_id(book_id) is None:
-                return 'Book ID not found ' + str(book_id), 409
+                return 'Book ID not found ' + str(book_id), 404
 
         new_list = models.PrivateList()
         new_list.parse_body(username, body)
@@ -204,6 +214,7 @@ class PrivateList(Resource):
         db.session.commit()
         return new_list.serialize(), 201
 
+    @user_api.response(200, 'Successful')
     def get(self, username):
         """Get all private list of books for a user"""
         user = query_user_by_name(username)
@@ -215,12 +226,15 @@ class PrivateList(Resource):
         out = []
         for copy in db.session.query(models.PrivateList).filter_by(user=username):
             out.append(copy.serialize())
-        return out, 201
+        return out, 200
 
 
 @user_api.route('/<username>/privatelist/<private_list_name>')
 @user_api.doc(params={'username': 'id of a user',
                       'private_list_name': 'the private list name owned by the user'})
+@user_api.response(200, 'success')
+@user_api.response(404, 'User does not exist or list name does not exist')
+@user_api.response(401, 'Unauthorized user')
 class PrivateList(Resource):
     def delete(self, username, private_list_name):
         """Delete a user's private list"""
@@ -231,7 +245,7 @@ class PrivateList(Resource):
             return 'Unauthorized User', 401
         list = query_private_list_by_id(username, private_list_name)
         if list is None:
-            return 'Private List does not exit', 404
+            return 'Private List does not exist', 404
         db.session.delete(list)
         db.session.commit()
         return "PrivateList has been deleted", 200
@@ -240,18 +254,22 @@ class PrivateList(Resource):
         """Get a private list of books for a user"""
         user = query_user_by_name(username)
         if user is None:
-            return 'User does not exit', 404
+            return 'User does not exist', 404
         if invalid_user(username):
             return 'Unauthorized User', 401
         list = query_private_list_by_id(username, private_list_name)
         if list is None:
-            return 'Private List does not exit', 404
+            return 'Private List does not exist', 404
         return list.serialize(), 200
 
 
 @user_api.route('/<username>/privatelist/<private_list_name>/addbooks')
 @user_api.doc(params={'username': "name of a user",
                       'private_list_name': 'the private list name owned by the user'})
+@user_api.response(201, 'success')
+@user_api.response(404, 'User does not exist or list name does not exist')
+@user_api.response(401, 'Unauthorized user')
+@user_api.response(409, 'Book id not found')
 class PrivateList(Resource):
     def post(self, username, private_list_name):
         """Add books to a private lsit of books owned by a user"""
@@ -276,12 +294,15 @@ class PrivateList(Resource):
         else:
             list.books = body.get('books')
         db.session.commit()
-        return list.serialize(), 200
+        return list.serialize(), 201
 
 
 @user_api.route('/<username>/privatelist/<private_list_name>/removebooks')
 @user_api.doc(params={'username': "name of a user",
                       'private_list_name': 'the private list name owned by the user'})
+@user_api.response(200, 'success')
+@user_api.response(404, 'User does not exist or list name does not exist')
+@user_api.response(401, 'Unauthorized user')
 class PrivateList(Resource):
     def post(self, username, private_list_name):
         """Remove books from a private list owned by a user"""
@@ -312,14 +333,17 @@ book_vector.add_namespace(copy_api)
 
 
 @copy_api.route('')
+@copy_api.response(404, 'User does not exist')
+@copy_api.response(401, 'Unauthorized user')
 class Copy(Resource):
+    @copy_api.response(201, 'success')
     def post(self):
         """add copy of a book to a user"""
         body = request.get_json()
         username = body.get('user')
         user = query_user_by_name(username)
         if user is None:
-            return 'User does not exit', 404
+            return 'User does not exist', 404
         if invalid_user(username):
             return 'Unauthorized User', 401
         book_id = body.get('book')
@@ -332,6 +356,7 @@ class Copy(Resource):
         db.session.commit()
         return new_copy.serialize(), 201
 
+    @copy_api.response(200, 'success')
     def get(self):
         """Get all books/copies owned by a user"""
         copies = db.session.query(models.Copy)
@@ -339,6 +364,8 @@ class Copy(Resource):
 
 
 @copy_api.route('/search')
+@copy_api.response(200, 'success')
+@copy_api.response(400, 'Parameters required')
 class Copy(Resource):
     def get(self):
         """Search copy of books by copy_id/book_id/username/status or combination search"""
@@ -356,11 +383,15 @@ class Copy(Resource):
         status = request.args.get("status")
         if status is not None:
             copies = copies.filter_by(status=status)
+        if copy_id is None and book_id is None and username is None and status is None:
+            return 'Please proved searching parameter', 400
         return [copy.serialize() for copy in copies], 200
 
 
 @copy_api.route('/<copy_id>')
 @copy_api.doc(params={'copy_id': 'id of a copy'})
+@copy_api.response(404, 'Copy of book not found')
+@copy_api.response(200, 'success')
 class Copy(Resource):
     def get(self, copy_id):
         """Get the book/copy information of a book"""
@@ -369,6 +400,7 @@ class Copy(Resource):
             return 'copy is not found', 404
         return copy.serialize(), 200
 
+    @copy_api.response(401, 'Unauthorized user')
     def delete(self, copy_id):
         """Delete a copy of books"""
         copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
@@ -383,6 +415,9 @@ class Copy(Resource):
 
 @copy_api.route('/<copy_id>/updatestatus')
 @copy_api.doc(params={'copy_id': 'id of a copy'})
+@copy_api.response(404, 'Copy of book not found')
+@copy_api.response(200, 'Success')
+@copy_api.response(401, 'Unauthorized user')
 class Copy(Resource):
     def put(self, copy_id):
         """Update the status of a copy of book"""
@@ -400,13 +435,15 @@ class Copy(Resource):
 
 @copy_api.route('/<copy_id>/note')
 @copy_api.doc(params={'copy_id': 'id of a copy'})
+@copy_api.response(404, 'Copy of book not found')
+@copy_api.response(401, 'Unauthorized user')
+@copy_api.response(200, 'Success')
 class Copy(Resource):
+
     def get(self, copy_id):
         """Get all notes for a copy of a book"""
         checkCopyValidity(copy_id)
         copy_notes = db.session.query(models.Notes).filter_by(copy_id=copy_id)
-        if copy_notes is None:
-            return 'note is not found', 404
         return [note.serialize() for note in copy_notes], 200
 
     def post(self, copy_id):
@@ -418,7 +455,7 @@ class Copy(Resource):
         new_note.copy_id = copy_id
         db.session.add(new_note)
         db.session.commit()
-        return 'A note \"{}\" has been added to book copy of {}'.format(new_note.note, copy_id), 200
+        return 'A note \"{}\" has been added to book copy of {}'.format(new_note.note, copy_id), 201
 
     def put(self, copy_id):
         """Update a note for a book"""
@@ -447,7 +484,7 @@ class Copy(Resource):
             return 'No notes found', 404
         db.session.delete(note)
         db.session.commit()
-        return 'Note id of {} for book copy id {} has been removed.'.format(note_id, copy_id)
+        return 'Note id of {} for book copy id {} has been removed.'.format(note_id, copy_id), 200
 
 
 def checkCopyValidity(copy_id):
@@ -464,6 +501,11 @@ book_vector.add_namespace(order_api)
 
 @order_api.route('')
 class Order(Resource):
+    @order_api.response(404, 'User not exist')
+    @order_api.response(401, 'Unauthorized user')
+    @order_api.response(409, 'Copy of id not found')
+    @order_api.response(400, "Copy of book not available")
+    @order_api.response(201, 'Order successfully posted')
     def post(self):
         """Make an order for a copy of book"""
         body = request.get_json()
@@ -490,35 +532,19 @@ class Order(Resource):
         db.session.commit()
         return new_order.serialize(), 201
 
+    @order_api.response(200, 'Success')
     def get(self):
         """Get information about all orders"""
         orders = db.session.query(models.Order)
-        copy = request.args.get('copy')
-        if copy is not None:
-            orders = orders.filter_by(copy=copy)
+        return [order.serialize() for order in orders], 200
 
-        borrower = request.args.get('borrower')
-        if borrower is not None:
-            orders = orders.filter_by(borrower=borrower)
-
-        copy_owner = request.args.get('copy_owner')
-        if copy_owner is not None:
-            orders = orders.filter_by(copy_owner=copy_owner)
-
-        status = request.args.get('status')
-        if status is not None:
-            orders = orders.filter_by(status=status)
-
-        out = []
-        for order in orders:
-            out.append(order.serialize())
-        return out, 201
 
 @order_api.route('/search')
+@order_api.response(200, 'Success')
+@order_api.response(400, 'Searching parameters required')
 class Order(Resource):
     def get(self):
         """Search an order by id/copy_owner/borrower/order_status or combination search"""
-
         orders = db.session.query(models.Order)
         copy = request.args.get('copy')
         if copy is not None:
@@ -535,11 +561,10 @@ class Order(Resource):
         status = request.args.get('status')
         if status is not None:
             orders = orders.filter_by(status=status)
+        if copy is None and borrower is None and copy_owner is None and status is None:
+            return 'Please provide searching parameters', 400
 
-        out = []
-        for order in orders:
-            out.append(order.serialize())
-        return out, 201
+        return [order.serialize() for order in orders], 200
 
 
 def change_order_status(order_id, status):
@@ -554,12 +579,15 @@ def change_order_status(order_id, status):
 
 @order_api.route('/<order_id>/accept')
 @order_api.doc(params={'order_id': 'id of an order'})
+@order_api.response(404, 'Copy ID not found')
+@order_api.response(401, 'Unauthorized user')
+@order_api.response(201, 'Success')
 class Order(Resource):
     def put(self, order_id):
         """Accept an order"""
         order = change_order_status(order_id, ORDER_STATUS_ACCPETED)
         if order is None:
-            return 'Order ID not found ' + str(order_id), 409
+            return 'Order ID not found ' + str(order_id), 404
         elif invalid_user(order.copy_owner):
             return 'Unauthorized User', 401
         copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
@@ -570,12 +598,15 @@ class Order(Resource):
 
 @order_api.route('/<order_id>/decline')
 @order_api.doc(params={'order_id': 'id of an order'})
+@order_api.response(404, 'Copy ID not found')
+@order_api.response(401, 'Unauthorized user')
+@order_api.response(201, 'Success')
 class Order(Resource):
     def put(self, order_id):
         """Decline an order"""
         order = change_order_status(order_id, ORDER_STATUS_DECLINED)
         if order is None:
-            return 'Order ID not found ' + str(order_id), 409
+            return 'Order ID not found ' + str(order_id), 404
         elif invalid_user(order.copy_owner):
             return 'Unauthorized User', 401
         copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
@@ -586,16 +617,21 @@ class Order(Resource):
 
 @order_api.route('/<order_id>')
 @order_api.doc(params={'order_id': 'id of an order'})
+@order_api.response(404, 'Copy ID not found')
+@order_api.response(200, 'Success')
 class Order(Resource):
     def get(self, order_id):
         """Get information about an order"""
         order = db.session.query(models.Order).filter_by(id=order_id).first()
         if order is None:
-            return 'Order does not exit', 404
+            return 'Order does not exist', 404
         return order.serialize(), 200
 
 
 @order_api.route('/return')
+@order_api.response(200, 'Success')
+@order_api.response(400, 'Too many parameters')
+@order_api.response(404, 'copy id or order id not found')
 class Order(Resource):
     def post(self):
         """Return a book to complete an order, by providing an order id or copy id"""
@@ -612,7 +648,7 @@ class Order(Resource):
             return 'Please provide a correct order_id or copy_id for the book', 404
         copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
         if copy is None:
-            return 'Copy of the book does not exit', 404
+            return 'Copy of the book does not exist', 404
         order = change_order_status(order.id, ORDER_STATUS_COMPLETED)
         copy.status = BOOK_COPY_STATUS_AVAILABLE
         db.session.commit()
@@ -624,6 +660,9 @@ book_vector.add_namespace(login_api)
 
 
 @login_api.route('')
+@login_api.response(200, 'Success')
+@login_api.response(404, 'Username not found')
+@login_api.response(400, 'password wrong')
 class Login(Resource):
     def post(self):
         """Login as a user"""
@@ -636,6 +675,7 @@ class Login(Resource):
 
         return self.try_login(username, password)
 
+    @login_api.response(200, 'successfully get login form')
     def get(self):
         """Get the login form"""
         return Response('''
@@ -648,10 +688,14 @@ class Login(Resource):
 
     def try_login(self, username, password):
         registeredUser = load_user(username)
-        if registeredUser != None and registeredUser.password == password:
+        if registeredUser is None:
+            return 'User not exist', 404
+        if registeredUser.password != password:
+            return 'Password not correct', 400
+        if registeredUser is not None and registeredUser.password == password:
             registeredUser.authenticated = True
             login_user(registeredUser)
-            return "Login Successfully: " + current_user.username
+            return "Login Successfully: " + current_user.username, 200
         else:
             return abort(401)
 
@@ -661,6 +705,8 @@ book_vector.add_namespace(register_api)
 
 
 @register_api.route('/')
+@register_api.response(409, 'User existed')
+@register_api.response(201, "Registered Successfully")
 class Register(Resource):
     def post(self):
         """Register as a user"""
@@ -681,8 +727,9 @@ class Register(Resource):
                                phone=phone or None)
         db.session.add(new_user)
         db.session.commit()
-        return Response("Registered Successfully")
+        return "Registered Successfully", 201
 
+    @register_api.response(200, 'Register form get')
     def get(self):
         """Get user registration form"""
         return Response('''
@@ -702,17 +749,13 @@ logout_api = Namespace('logout', description="Logout operations")
 book_vector.add_namespace(logout_api)
 
 
-@logout_api.route('/')
+@logout_api.route('')
+@login_api.response(200, 'Success')
 class Logout(Resource):
     def delete(self):
         """Current user logout"""
         logout_user()
-        return Response("Logout Successfully")
-
-    # def get(self):
-    #     """Current user logout"""
-    #     logout_user()
-    #     return Response("Logout Successfully")
+        return "Logout Successfully", 200
 
 
 reminder_api = Namespace('reminder', description="Send reminder operations")
@@ -720,15 +763,17 @@ book_vector.add_namespace(reminder_api)
 
 
 @reminder_api.route('/send')
-@reminder_api.response(201, 'success')
-@reminder_api.response(404, 'no loaner record found')
+@reminder_api.response(201, 'Success')
+@reminder_api.response(200, 'No reminders needed to be sent')
+@reminder_api.response(404, 'Error found')
 class Reminder(Resource):
     def post(self):
         """Send reminders 3 days before expired dates"""
         cur_time = datetime.utcnow()
-        expired_time = cur_time + timedelta(days=3)
-        toSend = db.session.query(models.Order).filter_by(status=ORDER_STATUS_ACCPETED).filter(models.Order.expire >= cur_time,
-                                                                           models.Order.expire <= expired_time)
+        expired_time = cur_time + timedelta(days=DAYS_To_SEND_REMINDER_FROM_CUR_TIME)
+        toSend = db.session.query(models.Order).filter_by(status=ORDER_STATUS_ACCPETED).filter(
+            models.Order.expire >= cur_time,
+            models.Order.expire <= expired_time)
         if toSend is None:
             return 'No reminders needed to be sent.', 200
         try:
@@ -739,4 +784,4 @@ class Reminder(Resource):
                 check = EmailSender.send_email(email, record.borrower, book.title, record.expire)
             return 'Reminders sent successfully!', 201
         except Exception as e:
-            return 'Error in sending reminders: {}', 400
+            return 'Error in sending reminders', 404

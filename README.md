@@ -6,6 +6,7 @@ By using this sever, you can:
 2. add/update/remove a book to the library server
 3. search a book by year/category/author or any combination search
 4. add/remove/update different lists of books for a user
+
  To deal with loaning books, we use COPY of book
 5. add/remove/update copy (associated with book_id) to a user (which means a user owned it)
 6. add/remove/update note for a copy

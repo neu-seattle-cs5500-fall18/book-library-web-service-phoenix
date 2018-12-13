@@ -11,3 +11,5 @@ ORDER_STATUS_COMPLETED = 4
 
 EMAIL_ADDRESS = "phenixbookvector@gmail.com"
 EMAIL_PASSWORD = "bookvector666"
+
+DAYS_To_SEND_REMINDER_FROM_CUR_TIME = 3
