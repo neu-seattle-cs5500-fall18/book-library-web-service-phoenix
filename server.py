@@ -704,7 +704,7 @@ register_api = Namespace('register', "Register operations")
 book_vector.add_namespace(register_api)
 
 
-@register_api.route('/')
+@register_api.route('')
 @register_api.response(409, 'User existed')
 @register_api.response(201, "Registered Successfully")
 class Register(Resource):
