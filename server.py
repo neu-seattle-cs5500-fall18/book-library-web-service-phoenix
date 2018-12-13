@@ -767,15 +767,19 @@ reminder_api = Namespace('reminder', description="Send reminder operations")
 book_vector.add_namespace(reminder_api)
 
 
-@reminder_api.route('/send')
+@reminder_api.route('/send/<days>')
+@reminder_api.doc(params={'days': 'within the number of days to remind users to return books'})
 @reminder_api.response(201, 'Success')
 @reminder_api.response(200, 'No reminders needed to be sent')
 @reminder_api.response(404, 'Error found')
+@reminder_api.response(400, 'days should be > 0')
 class Reminder(Resource):
-    def post(self):
-        """Send reminders 3 days before expired dates"""
+    def post(self, days):
+        """Send reminders to those need to return books within specific days from current time"""
+        if days <= 0:
+            return 'Days can not be smaller than 0', 400
         cur_time = datetime.utcnow()
-        expired_time = cur_time + timedelta(days=DAYS_To_SEND_REMINDER_FROM_CUR_TIME)
+        expired_time = cur_time + timedelta(days=days)
         toSend = db.session.query(models.Order).filter_by(status=ORDER_STATUS_ACCPETED).filter(
             models.Order.expire >= cur_time,
             models.Order.expire <= expired_time)

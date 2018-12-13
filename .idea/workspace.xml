@@ -66,7 +66,7 @@
         <entry file="file://$PROJECT_DIR$/constant.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="238">
-              <caret line="14" column="9" lean-forward="true" selection-start-line="14" selection-start-column="9" selection-end-line="14" selection-end-column="9" />
+              <caret line="14" column="39" lean-forward="true" selection-start-line="14" selection-start-column="39" selection-end-line="14" selection-end-column="39" />
             </state>
           </provider>
         </entry>
@@ -74,8 +74,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/models.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="387">
-              <caret line="88" column="26" lean-forward="true" selection-start-line="88" selection-start-column="26" selection-end-line="88" selection-end-column="26" />
+            <state relative-caret-position="-981">
+              <caret line="95" column="10" selection-start-line="95" selection-start-column="6" selection-end-line="95" selection-end-column="10" />
               <folding>
                 <element signature="e#0#24#0" expanded="true" />
               </folding>
@@ -95,8 +95,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/server.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="285">
-              <caret line="326" column="27" lean-forward="true" selection-start-line="326" selection-start-column="27" selection-end-line="326" selection-end-column="27" />
+            <state relative-caret-position="149">
+              <caret line="770" column="38" lean-forward="true" selection-start-line="770" selection-start-column="38" selection-end-line="770" selection-end-column="38" />
               <folding>
                 <element signature="e#0#51#0" expanded="true" />
               </folding>
@@ -136,8 +136,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>return</find>
-      <find>/return</find>
       <find>categ</find>
       <find>/retu</find>
       <find>change_order</find>
@@ -155,7 +153,6 @@
       <find>query</find>
       <find>create</find>
       <find>query_</find>
-      <find>Copy</find>
       <find>/search</find>
       <find>/&lt;order</find>
       <find>datetime</find>
@@ -164,8 +161,11 @@
       <find>Register</find>
       <find>logout</find>
       <find>login</find>
-      <find>privatelist</find>
       <find>expire</find>
+      <find>privatelist</find>
+      <find>Copy</find>
+      <find>reminder</find>
+      <find>reminder'</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -282,12 +282,12 @@
       <workItem from="1544410404752" duration="4926000" />
       <workItem from="1544434753159" duration="23236000" />
       <workItem from="1544586285994" duration="31715000" />
-      <workItem from="1544673723134" duration="24737000" />
+      <workItem from="1544673723134" duration="26779000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="90712000" />
+    <option name="totallyTimeSpent" value="92754000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -300,8 +300,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1295" height="695" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.23076923" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.23076923" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -312,7 +313,7 @@
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3285968" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.3285968" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="8" visible="true" weight="0.24689165" />
+      <window_info anchor="bottom" id="Terminal" order="8" visible="true" weight="0.24689165" />
       <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
       <window_info anchor="bottom" id="Python Console" order="10" weight="0.3285968" />
       <window_info anchor="bottom" id="Docker" order="11" show_stripe_button="false" />
@@ -438,13 +439,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/constant.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" column="9" lean-forward="true" selection-start-line="14" selection-start-column="9" selection-end-line="14" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../example/venv/Lib/site-packages/flask/wrappers.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-314">
@@ -474,18 +468,25 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/models.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="387">
-          <caret line="88" column="26" lean-forward="true" selection-start-line="88" selection-start-column="26" selection-end-line="88" selection-end-column="26" />
+        <state relative-caret-position="-981">
+          <caret line="95" column="10" selection-start-line="95" selection-start-column="6" selection-end-line="95" selection-end-column="10" />
           <folding>
             <element signature="e#0#24#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/constant.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="238">
+          <caret line="14" column="39" lean-forward="true" selection-start-line="14" selection-start-column="39" selection-end-line="14" selection-end-column="39" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/server.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="285">
-          <caret line="326" column="27" lean-forward="true" selection-start-line="326" selection-start-column="27" selection-end-line="326" selection-end-column="27" />
+        <state relative-caret-position="149">
+          <caret line="770" column="38" lean-forward="true" selection-start-line="770" selection-start-column="38" selection-end-line="770" selection-end-column="38" />
           <folding>
             <element signature="e#0#51#0" expanded="true" />
           </folding>
