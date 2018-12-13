@@ -4,7 +4,9 @@ from constant import *
 import models
 from flask import request, abort, Response
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
-import ast, datetime
+import ast
+from datetime import datetime, timedelta
+from send_email import EmailSender
 
 login_manager = LoginManager()
 login_manager.login_view = "login"
@@ -51,13 +53,26 @@ class Book(Resource):
         """Add a book to the library"""
         body = request.get_json()
         new_book = models.Book()
-        new_book.parse_body(body)
+        new_book.title = body.get('title')
+        new_book.category = body.get('category') or None
+        new_book.author = body.get('author') or None
+        new_book.year = body.get('year') or None
+
+        # new_book.parse_body(body)
         db.session.add(new_book)
         db.session.commit()
         return new_book.serialize(), 201
 
     def get(self):
-        """search a book information by year/category/author or combination search"""
+        """get all the books information"""
+        books = db.session.query(models.Book)
+        return [book.serialize() for book in books], 200
+
+
+@book_api.route('/search')
+class Book(Resource):
+    def get(self):
+        """search a book by year/category/author or combination search"""
         books = db.session.query(models.Book)
         year = request.args.get('year')
         if year is not None:
@@ -70,11 +85,13 @@ class Book(Resource):
         author = request.args.get('author')
         if author is not None:
             books = books.filter_by(author=author)
-
-        out = []
-        for book in books:
-            out.append(book.serialize())
-        return out, 201
+        year1 = request.args.get('year1')
+        year2 = request.args.get('year2')
+        if year1 is None and year2 is not None or (year2 is None and year1 is not None):
+            return 'Search between years should provide year1 and year2', 400
+        if year1 is not None and year2 is not None:
+            books = db.session.query(models.Book).filter(models.Book.year >= year1, models.Book.year <= year2)
+        return [book.serialize() for book in books], 200
 
 
 def query_book_by_id(book_id):
@@ -286,6 +303,10 @@ class PrivateList(Resource):
         return list.serialize(), 200
 
 
+def query_copy_by_id(copy_id):
+    return db.session.query(models.Copy).filter_by(id=copy_id).first()
+
+
 copy_api = Namespace('copy', description="copy operations")
 book_vector.add_namespace(copy_api)
 
@@ -314,7 +335,18 @@ class Copy(Resource):
     def get(self):
         """Get all books/copies owned by a user"""
         copies = db.session.query(models.Copy)
-        book_id = request.args.get('book')
+        return [copy.serialize() for copy in copies], 200
+
+
+@copy_api.route('/search')
+class Copy(Resource):
+    def get(self):
+        """Search copy of books by copy_id/book_id/username/status or combination search"""
+        copies = db.session.query(models.Copy)
+        copy_id = request.args.get('copy_id')
+        if copy_id is not None:
+            copies = copies.filter_by(id=copy_id)
+        book_id = request.args.get('book_id')
         if book_id is not None:
             copies = copies.filter_by(book=book_id)
 
@@ -324,10 +356,7 @@ class Copy(Resource):
         status = request.args.get("status")
         if status is not None:
             copies = copies.filter_by(status=status)
-        out = []
-        for copy in copies:
-            out.append(copy.serialize())
-        return out, 201
+        return [copy.serialize() for copy in copies], 200
 
 
 @copy_api.route('/<copy_id>')
@@ -378,8 +407,7 @@ class Copy(Resource):
         copy_notes = db.session.query(models.Notes).filter_by(copy_id=copy_id)
         if copy_notes is None:
             return 'note is not found', 404
-
-        return [copy.note for copy in copy_notes], 200
+        return [note.serialize() for note in copy_notes], 200
 
     def post(self, copy_id):
         """Add a note to a copy of a book"""
@@ -402,7 +430,7 @@ class Copy(Resource):
             return 'Copy of the note not found', 404
         copy_note.parse_body(note_body)
         db.session.commit()
-        return 'Node for copy book of {} has been updated'.format(copy_id)
+        return 'Note for copy book of {} has been updated'.format(copy_id)
 
     def delete(self, copy_id):
         """Remove a note or all notes for a book"""
@@ -414,10 +442,12 @@ class Copy(Resource):
             db.session.delete(notes)
             db.session.commit()
             return 'Notes for book copy of {} has been all removed'.format(copy_id)
-        note = db.session.query(models.Notes).filter_by(id=note_id).filter_by(copy_id=copy_id)
+        note = db.session.query(models.Notes).filter_by(id=note_id).first()
+        if note is None:
+            return 'No notes found', 404
         db.session.delete(note)
         db.session.commit()
-        return 'Note id of {} for copy of book has been removed.'.format(note_id)
+        return 'Note id of {} for book copy id {} has been removed.'.format(note_id, copy_id)
 
 
 def checkCopyValidity(copy_id):
@@ -435,7 +465,7 @@ book_vector.add_namespace(order_api)
 @order_api.route('')
 class Order(Resource):
     def post(self):
-        """Make an order of book"""
+        """Make an order for a copy of book"""
         body = request.get_json()
         borrower = body.get('borrower')
         borrower = query_user_by_name(borrower)
@@ -461,7 +491,34 @@ class Order(Resource):
         return new_order.serialize(), 201
 
     def get(self):
-        """Get all information about orders"""
+        """Get information about all orders"""
+        orders = db.session.query(models.Order)
+        copy = request.args.get('copy')
+        if copy is not None:
+            orders = orders.filter_by(copy=copy)
+
+        borrower = request.args.get('borrower')
+        if borrower is not None:
+            orders = orders.filter_by(borrower=borrower)
+
+        copy_owner = request.args.get('copy_owner')
+        if copy_owner is not None:
+            orders = orders.filter_by(copy_owner=copy_owner)
+
+        status = request.args.get('status')
+        if status is not None:
+            orders = orders.filter_by(status=status)
+
+        out = []
+        for order in orders:
+            out.append(order.serialize())
+        return out, 201
+
+@order_api.route('/search')
+class Order(Resource):
+    def get(self):
+        """Search an order by id/copy_owner/borrower/order_status or combination search"""
+
         orders = db.session.query(models.Order)
         copy = request.args.get('copy')
         if copy is not None:
@@ -489,7 +546,7 @@ def change_order_status(order_id, status):
     order = db.session.query(models.Order).filter_by(id=order_id).first()
     if order is not None:
         order.status = status
-        order.modified = datetime.datetime.utcnow()
+        order.modified = datetime.utcnow()
         db.session.add(order)
         db.session.commit()
     return order
@@ -647,22 +704,39 @@ book_vector.add_namespace(logout_api)
 
 @logout_api.route('/')
 class Logout(Resource):
-    def post(self):
+    def delete(self):
         """Current user logout"""
         logout_user()
         return Response("Logout Successfully")
 
-    def get(self):
-        """Current user logout"""
-        logout_user()
-        return Response("Logout Successfully")
+    # def get(self):
+    #     """Current user logout"""
+    #     logout_user()
+    #     return Response("Logout Successfully")
 
 
 reminder_api = Namespace('reminder', description="Send reminder operations")
 book_vector.add_namespace(reminder_api)
 
 
-@reminder_api.route('/')
+@reminder_api.route('/send')
+@reminder_api.response(201, 'success')
+@reminder_api.response(404, 'no loaner record found')
 class Reminder(Resource):
-    def get(self):
-        return "Sent reminders", 201
+    def post(self):
+        """Send reminders 3 days before expired dates"""
+        cur_time = datetime.utcnow()
+        expired_time = cur_time + timedelta(days=3)
+        toSend = db.session.query(models.Order).filter_by(status=ORDER_STATUS_ACCPETED).filter(models.Order.expire >= cur_time,
+                                                                           models.Order.expire <= expired_time)
+        if toSend is None:
+            return 'No reminders needed to be sent.', 200
+        try:
+            for record in toSend:
+                email = query_user_by_name(record.borrower).email
+                book_copy = query_copy_by_id(record.copy)
+                book = query_book_by_id(book_copy.book)
+                check = EmailSender.send_email(email, record.borrower, book.title, record.expire)
+            return 'Reminders sent successfully!', 201
+        except Exception as e:
+            return 'Error in sending reminders: {}', 400
