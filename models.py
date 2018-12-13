@@ -2,6 +2,7 @@ from db_server import db
 from constant import *
 import datetime
 
+
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
@@ -10,10 +11,10 @@ class Book(db.Model):
     year = db.Column(db.Integer, nullable=True)
 
     def parse_body(self, body):
-        self.title=body.get('title')
-        self.category =body.get('category') or None
-        self.author =body.get('author') or None
-        self.year =body.get('year') or None
+        self.title = body.get('title')
+        self.category = body.get('category') or None
+        self.author = body.get('author') or None
+        self.year = body.get('year') or None
 
     def __repr__(self):
         return '<Book %r>' % self.id
@@ -51,12 +52,12 @@ class User(db.Model):
         return '<User %r>' % self.username
 
     def parse_body(self, body):
-        self.username =body.get('username')
-        self.password =body.get('password')
-        self.email =body.get('email') or None
-        self.first_name =body.get('first_name') or None
-        self.last_name =body.get('last_name') or None
-        self.phone =body.get('phone') or None
+        self.username = body.get('username')
+        self.password = body.get('password')
+        self.email = body.get('email') or None
+        self.first_name = body.get('first_name') or None
+        self.last_name = body.get('last_name') or None
+        self.phone = body.get('phone') or None
 
     def serialize(self):
         return {
@@ -80,7 +81,7 @@ class PrivateList(db.Model):
 
     def parse_body(self, user_id, body):
         self.user = user_id
-        self.name =body.get('name') or None
+        self.name = body.get('name') or None
         self.books = str(set(body.get('books'))) or None
 
     def serialize(self):
@@ -97,7 +98,6 @@ class Copy(db.Model):
     user = db.Column(db.String, db.ForeignKey('user.username'), nullable=False)
     book = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
     status = db.Column(db.Integer, nullable=False)
-    note = db.Column(db.String, nullable=False)
 
     def __repr__(self):
         return '<Copy %r>' % self.id
@@ -112,7 +112,6 @@ class Copy(db.Model):
             'user': self.user,
             'book': self.book,
             'status': self.status,
-            'node': self.note
         }
 
 
@@ -135,7 +134,6 @@ class Order(db.Model):
         self.copy_owner = body.get('copy_owner') or None
         self.expire = body.get('expire') or None
 
-
     def serialize(self):
         return {
             'id': self.id,
@@ -149,3 +147,21 @@ class Order(db.Model):
         }
 
 
+class Notes(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    copy_id = db.Column(db.Integer, db.ForeignKey('copy.id'), nullable=False)
+    note = db.Column(db.String, nullable=False)
+
+    def __repr__(self):
+        return '<notes %r>' % self.id
+
+    def parse_body(self, body):
+        self.note = body.get('note') or None
+        self.copy_id = body.get('copy_id') or None
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'copy_id': self.copy_id,
+            'note': self.note
+        }

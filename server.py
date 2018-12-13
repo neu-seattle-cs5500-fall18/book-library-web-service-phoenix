@@ -57,7 +57,7 @@ class Book(Resource):
         return new_book.serialize(), 201
 
     def get(self):
-        """Get all of the books"""
+        """search a book information by year/category/author or combination search"""
         books = db.session.query(models.Book)
         year = request.args.get('year')
         if year is not None:
@@ -203,7 +203,7 @@ class PrivateList(Resource):
 
 @user_api.route('/<username>/privatelist/<private_list_name>')
 @user_api.doc(params={'username': 'id of a user',
-                     'private_list_name': 'the private list name owned by the user'})
+                      'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def delete(self, username, private_list_name):
         """Delete a user's private list"""
@@ -234,7 +234,7 @@ class PrivateList(Resource):
 
 @user_api.route('/<username>/privatelist/<private_list_name>/addbooks')
 @user_api.doc(params={'username': "name of a user",
-                     'private_list_name': 'the private list name owned by the user'})
+                      'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def post(self, username, private_list_name):
         """Add books to a private lsit of books owned by a user"""
@@ -264,7 +264,7 @@ class PrivateList(Resource):
 
 @user_api.route('/<username>/privatelist/<private_list_name>/removebooks')
 @user_api.doc(params={'username': "name of a user",
-                     'private_list_name': 'the private list name owned by the user'})
+                      'private_list_name': 'the private list name owned by the user'})
 class PrivateList(Resource):
     def post(self, username, private_list_name):
         """Remove books from a private list owned by a user"""
@@ -307,7 +307,6 @@ class Copy(Resource):
         new_copy = models.Copy()
         new_copy.parse_body(body)
         new_copy.status = BOOK_COPY_STATUS_AVAILABLE
-        new_copy.note = 'new book'
         db.session.add(new_copy)
         db.session.commit()
         return new_copy.serialize(), 201
@@ -365,54 +364,68 @@ class Copy(Resource):
         if invalid_user(copy.user):
             return 'Unauthorized User', 401
         copy.status = body.get('status')
-        if copy.status == BOOK_COPY_STATUS_AVAILABLE:
-            copy.note = NOTE_AVAILABLE
-        elif copy.status == BOOK_COPY_STATUS_UNAVAILABLE:
-            copy.note = NOTE_NOT_AVAILABLE
-        elif copy.status == BOOK_COPY_STATUS_DEMAGED:
-            copy.note = NOTE_DAMAGE
-        else:
-            copy.note = NOTE_LOST
         db.session.add(copy)
         db.session.commit()
         return copy.serialize(), 200
 
 
-@copy_api.route('/<copy_id>/reference')
+@copy_api.route('/<copy_id>/note')
 @copy_api.doc(params={'copy_id': 'id of a copy'})
 class Copy(Resource):
     def get(self, copy_id):
-        """Get the node of a copy of a book"""
-        copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
-        if copy is None:
-            return 'copy is not found', 404
-        if invalid_user(copy.user):
-            return 'Unauthorized User', 401
-        return 'note for book copy of {} is: {}'.format(copy.id, copy.note), 200
+        """Get all notes for a copy of a book"""
+        checkCopyValidity(copy_id)
+        copy_notes = db.session.query(models.Notes).filter_by(copy_id=copy_id)
+        if copy_notes is None:
+            return 'note is not found', 404
+
+        return [copy.note for copy in copy_notes], 200
 
     def post(self, copy_id):
         """Add a note to a copy of a book"""
-        copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
-        if copy is None:
-            return 'copy is not found', 404
-        if invalid_user(copy.user):
-            return 'Unauthorized User', 401
-        note = request.get_json()
-        copy.note = note.get('note')
+        checkCopyValidity(copy_id)
+        note_body = request.get_json()
+        new_note = models.Notes()
+        new_note.parse_body(note_body)
+        new_note.copy_id = copy_id
+        db.session.add(new_note)
         db.session.commit()
-        return 'A note \"{}\" has been added to book copy of {}'.format(copy.note, copy_id), 200
+        return 'A note \"{}\" has been added to book copy of {}'.format(new_note.note, copy_id), 200
 
     def put(self, copy_id):
-        """Update a note for a copy of a book"""
-        copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
-        if copy is None:
-            return 'copy is not found', 404
-        if invalid_user(copy.user):
-            return 'Unauthorized User', 401
-        note = request.get_json()
-        copy.note = note
+        """Update a note for a book"""
+        checkCopyValidity(copy_id)
+        note_body = request.get_json()
+        note_id = note_body.get('note_id')
+        copy_note = db.session.query(models.Notes).filter_by(id=note_id).first()
+        if copy_note is None:
+            return 'Copy of the note not found', 404
+        copy_note.parse_body(note_body)
         db.session.commit()
-        return 'node for book copy of {} has been updated: {}'.format(copy_id, note), 200
+        return 'Node for copy book of {} has been updated'.format(copy_id)
+
+    def delete(self, copy_id):
+        """Remove a note or all notes for a book"""
+        checkCopyValidity(copy_id)
+        note_body = request.get_json()
+        note_id = note_body.get('note_id')
+        if note_id is None:
+            notes = db.session.query(models.Notes).filter_by(copy_id=copy_id)
+            db.session.delete(notes)
+            db.session.commit()
+            return 'Notes for book copy of {} has been all removed'.format(copy_id)
+        note = db.session.query(models.Notes).filter_by(id=note_id).filter_by(copy_id=copy_id)
+        db.session.delete(note)
+        db.session.commit()
+        return 'Note id of {} for copy of book has been removed.'.format(note_id)
+
+
+def checkCopyValidity(copy_id):
+    copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
+    if copy is None:
+        return 'copy is not found', 404
+    if invalid_user(copy.user):
+        return 'Unauthorized User', 401
 
 
 order_api = Namespace('order', description="Order operations")
@@ -435,12 +448,11 @@ class Order(Resource):
         if copy is None:
             return 'Copy ID not found ' + str(copy_id), 409
         if copy.status == BOOK_COPY_STATUS_UNAVAILABLE:
-            return NOTE_NOT_AVAILABLE, 400
+            return 'The copy of the book is not available', 400
         copy_owner = body.get('copy_owner')
         owner = query_user_by_name(copy_owner)
         if owner is None:
             return 'Copy owner not found ' + copy_owner, 409
-        copy.note = 'This copy is requested by {}'.format(copy_owner)
         new_order = models.Order()
         new_order.parse_body(body)
         new_order.status = ORDER_STATUS_REQUESTED
@@ -494,7 +506,6 @@ class Order(Resource):
         elif invalid_user(order.copy_owner):
             return 'Unauthorized User', 401
         copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
-        copy.note = NOTE_NOT_AVAILABLE + " to {}".format(order.borrower)
         copy.status = BOOK_COPY_STATUS_UNAVAILABLE
         db.session.commit()
         return order.serialize(), 201
@@ -511,7 +522,6 @@ class Order(Resource):
         elif invalid_user(order.copy_owner):
             return 'Unauthorized User', 401
         copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
-        copy.note = "The book is rejected to loan to {}".format(order.borrower)
         copy.status = BOOK_COPY_STATUS_AVAILABLE
         db.session.commit()
         return order.serialize(), 201
@@ -525,6 +535,30 @@ class Order(Resource):
         order = db.session.query(models.Order).filter_by(id=order_id).first()
         if order is None:
             return 'Order does not exit', 404
+        return order.serialize(), 200
+
+
+@order_api.route('/return')
+class Order(Resource):
+    def post(self):
+        """Return a book to complete an order, by providing an order id or copy id"""
+        order = None
+        order_id = request.args.get('order_id')
+        copy_id = request.args.get('copy_id')
+        if order_id is not None and copy_id is not None:
+            return 'Only one parameter is needed', 400
+        if order_id is not None:
+            order = db.session.query(models.Order).filter_by(id=order_id).first()
+        if copy_id is not None:
+            order = db.session.query(models.Order).filter_by(copy=copy_id).first()
+        if order is None:
+            return 'Please provide a correct order_id or copy_id for the book', 404
+        copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
+        if copy is None:
+            return 'Copy of the book does not exit', 404
+        order = change_order_status(order.id, ORDER_STATUS_COMPLETED)
+        copy.status = BOOK_COPY_STATUS_AVAILABLE
+        db.session.commit()
         return order.serialize(), 200
 
 
