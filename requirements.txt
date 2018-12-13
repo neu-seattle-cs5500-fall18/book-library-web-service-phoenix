@@ -1,4 +1,3 @@
-funcy
 alembic==1.0.3
 aniso8601==4.0.1
 certifi==2018.8.24
@@ -9,6 +8,7 @@ Flask-Migrate==2.3.0
 flask-restplus==0.12.1
 Flask-Script==2.0.6
 Flask-SQLAlchemy==2.3.2
+funcy==1.11
 gunicorn==19.9.0
 itsdangerous==1.1.0
 Jinja2==2.10
