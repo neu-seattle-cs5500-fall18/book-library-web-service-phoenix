@@ -321,7 +321,7 @@ class PrivateList(Resource):
         existing_books = ast.literal_eval(list.books)
         for book in body.get('books'):
             if not existing_books.__contains__(book):
-                return 'Book {} is not in the list'.format(book), 400
+                return 'Book list contains {} and Book {} is not in the list'.format(existing_books, book), 400
             existing_books.remove(book)
         list.books = str(existing_books)
         db.session.commit()
