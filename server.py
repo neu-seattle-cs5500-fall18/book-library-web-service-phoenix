@@ -34,7 +34,9 @@ def invalid_user(username):
 @api.route('/home')
 class Home(Resource):
     def get(self):
-        return "User Home: " + current_user.username
+        if current_user is None:
+            return 'Home: no user login yet', 200
+        return "User Home: " + current_user.username, 200
 
 
 @api.route('/support')
@@ -704,12 +706,13 @@ register_api = Namespace('register', "Register operations")
 book_vector.add_namespace(register_api)
 
 
-@register_api.route('')
+@register_api.route('/')
 class Register(Resource):
     @register_api.response(201, "Registered Successfully")
     @register_api.response(409, 'User existed')
     def post(self):
         """Register as a user"""
+
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
