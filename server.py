@@ -11,7 +11,6 @@ from send_email import EmailSender
 login_manager = LoginManager()
 login_manager.login_view = "login"
 api = Namespace('')
-
 book_vector = Api(title='Book Vector', version='2.0', description="A book library service by Team Phoenix")
 book_vector.add_namespace(api)
 
@@ -304,6 +303,7 @@ class PrivateList(Resource):
                       'private_list_name': 'the private list name owned by the user'})
 @user_api.response(200, 'success')
 @user_api.response(404, 'User does not exist or list name does not exist')
+@user_api.response(400, 'Book id not in the list')
 @user_api.response(401, 'Unauthorized user')
 class PrivateList(Resource):
     def post(self, username, private_list_name):
@@ -320,6 +320,8 @@ class PrivateList(Resource):
         body = request.get_json()
         existing_books = ast.literal_eval(list.books)
         for book in body.get('books'):
+            if not existing_books.__contains__(book):
+                return 'Book {} is not in the list'.format(book), 400
             existing_books.remove(book)
         list.books = str(existing_books)
         db.session.commit()
@@ -752,7 +754,7 @@ logout_api = Namespace('logout', description="Logout operations")
 book_vector.add_namespace(logout_api)
 
 
-@logout_api.route('')
+@logout_api.route('/')
 @login_api.response(200, 'Success')
 class Logout(Resource):
     def delete(self):
