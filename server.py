@@ -44,17 +44,16 @@ class Home(Resource):
         return "Please contact yu.jiah@husky.neu.edu; chen.xiany@husky.neu.edu", 200
 
 
-book_api = Namespace("book", description="Book operations")
-book_vector.add_namespace(book_api)
+book_ns = Namespace("book", description="Book operations")
 
-book_marshaller = book_api.model('Book_Query', {
+book_marshaller = book_ns.model('Book_Query', {
     'title': fields.String(),
     'category': fields.String(),
     'author': fields.String(),
     'year': fields.Integer()
 })
 
-new_book_marshaller = book_api.model('Full_Book', {
+new_book_marshaller = book_ns.model('BookModel', {
     'id': fields.Integer(),
     'title': fields.String(),
     'category': fields.String(),
@@ -71,12 +70,12 @@ query_parser.add_argument('year1', type=int, required=False)
 query_parser.add_argument('year2', type=int, required=False)
 
 
-@book_api.route('')
-@book_api.response(400, 'Bad request')
+@book_ns.route('')
+@book_ns.response(400, 'Bad request')
 class Book(Resource):
-    @book_api.response(201, 'Created')
-    @book_api.marshal_with(new_book_marshaller, code=201)
-    @book_api.expect(book_marshaller, validate=True)
+    @book_ns.response(201, 'Created')
+    @book_ns.marshal_with(new_book_marshaller, code=201)
+    @book_ns.expect(book_marshaller, validate=True)
     def post(self):
         '''
         Add a book to the library
@@ -89,19 +88,19 @@ class Book(Resource):
         db.session.commit()
         return new_book.serialize(), 201
 
-    @book_api.response(200, 'success')
+    @book_ns.response(200, 'success')
     def get(self):
         """get information for all books"""
         books = db.session.query(models.Book)
         return [book.serialize() for book in books], 200
 
 
-@book_api.route('/search')
-@book_api.response(200, 'success')
-@book_api.response(404, 'info not found')
-@book_api.response(416, 'request range required')
+@book_ns.route('/search')
+@book_ns.response(200, 'success')
+@book_ns.response(404, 'info not found')
+@book_ns.response(416, 'request range required')
 class Book(Resource):
-    @book_api.doc(body=query_parser)
+    @book_ns.doc(body=query_parser)
     def get(self):
         '''
         Search a book by title/year/category/author or combination search
@@ -137,10 +136,10 @@ def query_book_by_id(book_id):
     return db.session.query(models.Book).filter_by(id=book_id).first()
 
 
-@book_api.route('/<book_id>')
-@book_api.doc(params={'book_id': 'id of a book'})
-@book_api.response(200, 'success')
-@book_api.response(404, 'Id not found')
+@book_ns.route('/<book_id>')
+@book_ns.doc(params={'book_id': 'id of a book'})
+@book_ns.response(200, 'success')
+@book_ns.response(404, 'Id not found')
 class Book(Resource):
     def get(self, book_id):
         '''
@@ -153,8 +152,8 @@ class Book(Resource):
             return 'Book does not exit', 404
         return a_book.serialize(), 200
 
-    @book_api.marshal_with(new_book_marshaller, code=200)
-    @book_api.expect(book_marshaller, validate=True)
+    @book_ns.marshal_with(new_book_marshaller, code=200)
+    @book_ns.expect(book_marshaller, validate=True)
     def put(self, book_id):
         """
         Update a book by provide the id and information of the book
@@ -184,10 +183,18 @@ def query_user_by_name(username):
     return db.session.query(models.User).filter_by(username=username).first()
 
 
-user_api = Namespace('user', description="User operations")
-book_vector.add_namespace(user_api)
+user_ns = Namespace('user', description="User operations")
 
-user_marshaller = user_api.model('User', {
+full_user_marshaller = user_ns.model('UserModel', {
+    'id': fields.Integer(),
+    'password': fields.String(),
+    'email': fields.String(),
+    'first_name': fields.String(),
+    'last_name': fields.String(),
+    'phone': fields.String()
+})
+
+user_marshaller = user_ns.model('User_Query', {
     'password': fields.String(),
     'email': fields.String(),
     'first_name': fields.String(),
@@ -196,9 +203,9 @@ user_marshaller = user_api.model('User', {
 })
 
 
-@user_api.route('/<username>')
-@user_api.doc(params={'username': 'username for a user'})
-@user_api.response(404, 'User not exist')
+@user_ns.route('/<username>')
+@user_ns.doc(params={'username': 'username for a user'})
+@user_ns.response(404, 'User not exist')
 class User(Resource):
     def get(self, username):
         """
@@ -210,8 +217,8 @@ class User(Resource):
             return 'User does not exist', 404
         return user.serialize(), 200
 
-    @user_api.response(401, 'Unauthorized user')
-    @user_api.expect(user_marshaller, validate=True)
+    @user_ns.response(401, 'Unauthorized user')
+    @user_ns.expect(user_marshaller, validate=True)
     def put(self, username):
         """"Update a user's information"""
         user = query_user_by_name(username)
@@ -225,7 +232,7 @@ class User(Resource):
         db.session.commit()
         return user.serialize(), 200
 
-    @user_api.response(401, 'Unauthorized user')
+    @user_ns.response(401, 'Unauthorized user')
     def delete(self, username):
         """Delete a user"""
         user = query_user_by_name(username)
@@ -242,21 +249,27 @@ def query_private_list_by_id(username, private_list_name):
     return db.session.query(models.PrivateList).filter_by(user=username, name=private_list_name).first()
 
 
-list_marshaller = user_api.model('List', {
+list_marshaller = user_ns.model('List', {
     'name': fields.String(),
     'books': fields.String()
 })
 
+full_list_marshaller = user_ns.model('ListModel', {
+    'id': fields.Integer(),
+    'user':fields.String(),
+    'name': fields.String(),
+    'books': fields.String()
+})
 
-@user_api.route('/<username>/privatelist')
-@user_api.doc(params={'username': 'name of a user'})
-@user_api.response(404, 'User does not exist')
-@user_api.response(401, 'Unauthorized User')
+@user_ns.route('/<username>/privatelist')
+@user_ns.doc(params={'username': 'name of a user'})
+@user_ns.response(404, 'User does not exist')
+@user_ns.response(401, 'Unauthorized User')
 class PrivateList(Resource):
-    @user_api.response(409, 'List name already exists')
-    @user_api.response(404, 'Book id not found')
-    @user_api.response(201, 'Post successful')
-    @user_api.expect(list_marshaller, validate=True)
+    @user_ns.response(409, 'List name already exists')
+    @user_ns.response(404, 'Book id not found')
+    @user_ns.response(201, 'Post successful')
+    @user_ns.expect(list_marshaller, validate=True)
     def post(self, username):
         """
         Add a private book list to a user"
@@ -285,7 +298,7 @@ class PrivateList(Resource):
         db.session.commit()
         return new_list.serialize(), 201
 
-    @user_api.response(200, 'Successful')
+    @user_ns.response(200, 'Successful')
     def get(self, username):
         """
         Get all private list of books for a user
@@ -300,12 +313,12 @@ class PrivateList(Resource):
         return [l.serialize() for l in lists], 200
 
 
-@user_api.route('/<username>/privatelist/<private_list_name>')
-@user_api.doc(params={'username': 'id of a user',
+@user_ns.route('/<username>/privatelist/<private_list_name>')
+@user_ns.doc(params={'username': 'id of a user',
                       'private_list_name': 'the private list name owned by the user'})
-@user_api.response(200, 'success')
-@user_api.response(404, 'User does not exist or list name does not exist')
-@user_api.response(401, 'Unauthorized user')
+@user_ns.response(200, 'success')
+@user_ns.response(404, 'User does not exist or list name does not exist')
+@user_ns.response(401, 'Unauthorized user')
 class PrivateList(Resource):
     def delete(self, username, private_list_name):
         """Delete a user's private list"""
@@ -334,20 +347,20 @@ class PrivateList(Resource):
         return lst.serialize(), 200
 
 
-add_remove_books_marshaller = user_api.model('Books', {
+add_remove_books_marshaller = user_ns.model('Books', {
     'book_ids': fields.String()
 })
 
 
-@user_api.route('/<username>/privatelist/<private_list_name>/addbooks')
-@user_api.doc(params={'username': "name of a user",
+@user_ns.route('/<username>/privatelist/<private_list_name>/addbooks')
+@user_ns.doc(params={'username': "name of a user",
                       'private_list_name': 'the private list name owned by the user'})
-@user_api.response(201, 'success')
-@user_api.response(404, 'User does not exist or list name does not exist')
-@user_api.response(401, 'Unauthorized user')
-@user_api.response(409, 'Book id not found')
+@user_ns.response(201, 'success')
+@user_ns.response(404, 'User does not exist or list name does not exist')
+@user_ns.response(401, 'Unauthorized user')
+@user_ns.response(409, 'Book id not found')
 class PrivateList(Resource):
-    @user_api.expect(add_remove_books_marshaller, validate=True)
+    @user_ns.expect(add_remove_books_marshaller, validate=True)
     def post(self, username, private_list_name):
         """Add books to a private lsit of books owned by a user"""
         user = query_user_by_name(username)
@@ -373,15 +386,15 @@ class PrivateList(Resource):
         return lst.serialize(), 201
 
 
-@user_api.route('/<username>/privatelist/<private_list_name>/removebooks')
-@user_api.doc(params={'username': "name of a user",
+@user_ns.route('/<username>/privatelist/<private_list_name>/removebooks')
+@user_ns.doc(params={'username': "name of a user",
                       'private_list_name': 'the private list name owned by the user'})
-@user_api.response(200, 'success')
-@user_api.response(404, 'User does not exist or list name does not exist')
-@user_api.response(400, 'Book id not in the list')
-@user_api.response(401, 'Unauthorized user')
+@user_ns.response(200, 'success')
+@user_ns.response(404, 'User does not exist or list name does not exist')
+@user_ns.response(400, 'Book id not in the list')
+@user_ns.response(401, 'Unauthorized user')
 class PrivateList(Resource):
-    @user_api.expect(add_remove_books_marshaller, validate=True)
+    @user_ns.expect(add_remove_books_marshaller, validate=True)
     def put(self, username, private_list_name):
         """Remove books from a private list owned by a user"""
         user = query_user_by_name(username)
@@ -408,21 +421,26 @@ def query_copy_by_id(copy_id):
     return db.session.query(models.Copy).filter_by(id=copy_id).first()
 
 
-copy_api = Namespace('copy', description="copy operations")
-book_vector.add_namespace(copy_api)
+copy_ns = Namespace('copy', description="copy operations")
 
-copy_marshaller = copy_api.model('Copy', {
+copy_marshaller = copy_ns.model('Copy', {
     'user': fields.String(),
     'book_id': fields.Integer(),
 })
 
+full_copy_marshaller = copy_ns.model('Copy', {
+    'id': fields.Integer(),
+    'user': fields.String(),
+    'book_id': fields.Integer(),
+    'status': fields.Integer()
+})
 
-@copy_api.route('')
-@copy_api.response(404, 'User does not exist')
-@copy_api.response(401, 'Unauthorized user')
+@copy_ns.route('')
+@copy_ns.response(404, 'User does not exist')
+@copy_ns.response(401, 'Unauthorized user')
 class Copy(Resource):
-    @copy_api.response(201, 'success')
-    @copy_api.expect(copy_marshaller, validate=True)
+    @copy_ns.response(201, 'success')
+    @copy_ns.expect(copy_marshaller, validate=True)
     def post(self):
         """
         Add copy of a book to a user
@@ -445,7 +463,7 @@ class Copy(Resource):
         db.session.commit()
         return new_copy.serialize(), 201
 
-    @copy_api.response(200, 'success')
+    @copy_ns.response(200, 'success')
     def get(self):
         """Get all information of all book copies"""
         copies = db.session.query(models.Copy)
@@ -459,11 +477,11 @@ copy_query_parser.add_argument('user', type=str, required=False)
 copy_query_parser.add_argument('status', type=int, required=False)
 
 
-@copy_api.route('/search')
-@copy_api.response(200, 'success')
-@copy_api.response(400, 'Parameters required')
+@copy_ns.route('/search')
+@copy_ns.response(200, 'success')
+@copy_ns.response(400, 'Parameters required')
 class Copy(Resource):
-    @copy_api.doc(body=copy_query_parser)
+    @copy_ns.doc(body=copy_query_parser)
     def get(self):
         """
         Search copies of books by copy_id/book_id/username/status or combination search
@@ -490,13 +508,13 @@ class Copy(Resource):
         return [copy.serialize() for copy in copies], 200
 
 
-@copy_api.route('/<copy_id>')
-@copy_api.doc(params={'copy_id': 'id of a copy'})
-@copy_api.response(404, 'Copy of book not found')
-@copy_api.response(200, 'success')
+@copy_ns.route('/<copy_id>')
+@copy_ns.doc(params={'copy_id': 'id of a copy'})
+@copy_ns.response(404, 'Copy of book not found')
+@copy_ns.response(200, 'success')
 class Copy(Resource):
 
-    @copy_api.response(401, 'Unauthorized user')
+    @copy_ns.response(401, 'Unauthorized user')
     def delete(self, copy_id):
         """Delete a copy of books"""
         copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
@@ -509,18 +527,18 @@ class Copy(Resource):
         return "copy has been deleted", 200
 
 
-status_marshaller = copy_api.model('Status', {
+status_marshaller = copy_ns.model('Status', {
     'status': fields.Integer()
 })
 
 
-@copy_api.route('/<copy_id>/updatestatus')
-@copy_api.doc(params={'copy_id': 'id of a copy'})
-@copy_api.response(404, 'Copy of book not found')
-@copy_api.response(200, 'Success')
-@copy_api.response(401, 'Unauthorized user')
+@copy_ns.route('/<copy_id>/updatestatus')
+@copy_ns.doc(params={'copy_id': 'id of a copy'})
+@copy_ns.response(404, 'Copy of book not found')
+@copy_ns.response(200, 'Success')
+@copy_ns.response(401, 'Unauthorized user')
 class Copy(Resource):
-    @copy_api.expect(status_marshaller, validate=True)
+    @copy_ns.expect(status_marshaller, validate=True)
     def put(self, copy_id):
         """Update the status of a copy of book"""
         body = request.get_json()
@@ -535,30 +553,30 @@ class Copy(Resource):
         return copy.serialize(), 200
 
 
-note_marshaller = copy_api.model('Note', {
+note_marshaller = copy_ns.model('Note', {
     'note': fields.String()
 })
 
-note_marshaller_update = copy_api.model('Note_Update', {
+note_marshaller_update = copy_ns.model('Note_Update', {
     'note_id': fields.Integer(),
     'note': fields.String()
 })
 
 
-@copy_api.route('/<copy_id>/note')
-@copy_api.doc(params={'copy_id': 'id of a copy'})
-@copy_api.response(404, 'Copy of book not found')
-@copy_api.response(401, 'Unauthorized user')
+@copy_ns.route('/<copy_id>/note')
+@copy_ns.doc(params={'copy_id': 'id of a copy'})
+@copy_ns.response(404, 'Copy of book not found')
+@copy_ns.response(401, 'Unauthorized user')
 class Copy(Resource):
-    @copy_api.response(200, 'Success')
+    @copy_ns.response(200, 'Success')
     def get(self, copy_id):
         """Get all notes for a copy of a book"""
         checkCopyValidity(copy_id)
         copy_notes = db.session.query(models.Notes).filter_by(copy_id=copy_id)
         return [note.serialize() for note in copy_notes], 200
 
-    @copy_api.response(201, 'Note successfully added ')
-    @copy_api.expect(note_marshaller, validate=True)
+    @copy_ns.response(201, 'Note successfully added ')
+    @copy_ns.expect(note_marshaller, validate=True)
     def post(self, copy_id):
         """Add a note to a copy of a book"""
         checkCopyValidity(copy_id)
@@ -570,9 +588,9 @@ class Copy(Resource):
         db.session.commit()
         return 'A note \"{}\" has been added to book copy of {}'.format(new_note.note, copy_id), 201
 
-    @copy_api.response(200, 'Note updated successfully')
-    @copy_api.response(400, 'Wrong note id input')
-    @copy_api.expect(note_marshaller_update, validate=True)
+    @copy_ns.response(200, 'Note updated successfully')
+    @copy_ns.response(400, 'Wrong note id input')
+    @copy_ns.expect(note_marshaller_update, validate=True)
     def put(self, copy_id):
         """Update a note for a book"""
         checkCopyValidity(copy_id)
@@ -587,7 +605,7 @@ class Copy(Resource):
         db.session.commit()
         return 'Note for copy book of {} has been updated'.format(copy_id)
 
-    @copy_api.response(200, 'Note deleted successfully')
+    @copy_ns.response(200, 'Note deleted successfully')
     def delete(self, copy_id):
         """Remove all notes for a copy of book"""
         checkCopyValidity(copy_id)
@@ -614,10 +632,9 @@ def checkCopyValidity(copy_id):
         return 'Unauthorized User', 401
 
 
-order_api = Namespace('order', description="Order operations")
-book_vector.add_namespace(order_api)
+order_ns = Namespace('order', description="Order operations")
 
-order_marshaller = order_api.model("Order", {
+order_marshaller = order_ns.model("Order", {
     'copy_id': fields.Integer(),
     'borrower': fields.String(),
     'copy_owner': fields.String(),
@@ -633,20 +650,20 @@ order_query_parser.add_argument('order_status', type=int, required=False)
 order_query_parser.add_argument('return_date', type=datetime, required=False)
 
 
-@order_api.route('')
+@order_ns.route('')
 class Order(Resource):
-    @order_api.response(200, 'Success')
+    @order_ns.response(200, 'Success')
     def get(self):
         """Get information about all orders"""
         orders = db.session.query(models.Order)
         return [order.serialize() for order in orders], 200
 
-    @order_api.response(404, 'User not exist')
-    @order_api.response(401, 'Unauthorized user')
-    @order_api.response(409, 'Copy of id not found')
-    @order_api.response(400, "Copy of book not available")
-    @order_api.response(201, 'Order successfully posted')
-    @order_api.expect(order_marshaller, validate=True)
+    @order_ns.response(404, 'User not exist')
+    @order_ns.response(401, 'Unauthorized user')
+    @order_ns.response(409, 'Copy of id not found')
+    @order_ns.response(400, "Copy of book not available")
+    @order_ns.response(201, 'Order successfully posted')
+    @order_ns.expect(order_marshaller, validate=True)
     def post(self):
         """Make an order for a copy of book"""
         body = request.get_json()
@@ -674,11 +691,11 @@ class Order(Resource):
         return new_order.serialize(), 201
 
 
-@order_api.route('/search')
-@order_api.response(200, 'Success')
-@order_api.response(400, 'Searching parameters required')
+@order_ns.route('/search')
+@order_ns.response(200, 'Success')
+@order_ns.response(400, 'Searching parameters required')
 class Order(Resource):
-    @order_api.doc(body=order_query_parser)
+    @order_ns.doc(body=order_query_parser)
     def get(self):
         """Search an order by id/copy_owner/borrower/order_status or combination search"""
         orders = db.session.query(models.Order)
@@ -719,7 +736,7 @@ def change_order_status(order_id, status):
     return order
 
 
-order_status_marshaller = order_api.model('OrderWithStatus', {
+order_status_marshaller = order_ns.model('OrderWithStatus', {
     'copy_id': fields.Integer(),
     'borrower': fields.String(),
     'copy_owner': fields.String(),
@@ -727,16 +744,24 @@ order_status_marshaller = order_api.model('OrderWithStatus', {
     'return_date': fields.DateTime(dt_format='iso8601')
 })
 
+full_order_status_marshaller = order_ns.model('OrderModel', {
+    'id': fields.Integer(),
+    'copy_id': fields.Integer(),
+    'borrower': fields.String(),
+    'copy_owner': fields.String(),
+    'order_status': fields.Integer(),
+    'return_date': fields.DateTime(dt_format='iso8601')
+})
 
-@order_api.route('/<order_id>/update')
+@order_ns.route('/<order_id>/update')
 class Order(Resource):
-    @order_api.response(200, 'Order updated successfully')
-    @order_api.response(404, 'Borrower not exist')
+    @order_ns.response(200, 'Order updated successfully')
+    @order_ns.response(404, 'Borrower not exist')
     # @order_api.response(401, 'Unauthorized user')
-    @order_api.response(409, 'Copy of id not found')
-    @order_api.response(400, "Copy of book not available")
-    @order_api.response(400, 'Return date wrong')
-    @order_api.expect(order_status_marshaller, validate=True)
+    @order_ns.response(409, 'Copy of id not found')
+    @order_ns.response(400, "Copy of book not available")
+    @order_ns.response(400, 'Return date wrong')
+    @order_ns.expect(order_status_marshaller, validate=True)
     def put(self, order_id):
         """
         Update information of an order
@@ -780,11 +805,11 @@ class Order(Resource):
         return order.serialize(), 200
 
 
-@order_api.route('/<order_id>/accept')
-@order_api.doc(params={'order_id': 'id of an order'})
-@order_api.response(404, 'Copy ID not found')
-@order_api.response(401, 'Unauthorized user')
-@order_api.response(201, 'Success')
+@order_ns.route('/<order_id>/accept')
+@order_ns.doc(params={'order_id': 'id of an order'})
+@order_ns.response(404, 'Copy ID not found')
+@order_ns.response(401, 'Unauthorized user')
+@order_ns.response(201, 'Success')
 class Order(Resource):
     def put(self, order_id):
         """Accept an order"""
@@ -799,11 +824,11 @@ class Order(Resource):
         return order.serialize(), 201
 
 
-@order_api.route('/<order_id>/decline')
-@order_api.doc(params={'order_id': 'id of an order'})
-@order_api.response(404, 'Copy ID not found')
-@order_api.response(401, 'Unauthorized user')
-@order_api.response(201, 'Success')
+@order_ns.route('/<order_id>/decline')
+@order_ns.doc(params={'order_id': 'id of an order'})
+@order_ns.response(404, 'Copy ID not found')
+@order_ns.response(401, 'Unauthorized user')
+@order_ns.response(201, 'Success')
 class Order(Resource):
     def put(self, order_id):
         """Decline an order"""
@@ -818,10 +843,10 @@ class Order(Resource):
         return order.serialize(), 201
 
 
-@order_api.route('/<order_id>')
-@order_api.doc(params={'order_id': 'id of an order'})
-@order_api.response(404, 'Copy ID not found')
-@order_api.response(200, 'Success')
+@order_ns.route('/<order_id>')
+@order_ns.doc(params={'order_id': 'id of an order'})
+@order_ns.response(404, 'Copy ID not found')
+@order_ns.response(200, 'Success')
 class Order(Resource):
     def get(self, order_id):
         """Get information about an order"""
@@ -836,12 +861,12 @@ book_return_parser.add_argument('order_id', type=int, required=False)
 book_return_parser.add_argument('copy_id', type=int, required=False)
 
 
-@order_api.route('/return')
-@order_api.response(200, 'Success')
-@order_api.response(400, 'Too many parameters')
-@order_api.response(404, 'copy id or order id not found')
+@order_ns.route('/return')
+@order_ns.response(200, 'Success')
+@order_ns.response(400, 'Too many parameters')
+@order_ns.response(404, 'copy id or order id not found')
 class Order(Resource):
-    @order_api.doc(body=book_return_parser)
+    @order_ns.doc(body=book_return_parser)
     def post(self):
         """Return a book to complete an order, by providing an order id or copy id"""
         order = None
@@ -866,19 +891,18 @@ class Order(Resource):
                 'message': 'Book returned, Order completed!'}, 200
 
 
-login_api = Namespace('login', description="Login operations")
-book_vector.add_namespace(login_api)
+login_ns = Namespace('login', description="Login operations")
 
 login_parser = reqparse.RequestParser()
 login_parser.add_argument('username', type=str, required=True, location='form')
 login_parser.add_argument('password', type=str, required=True, location='form')
 
-@login_api.route('')
-@login_api.response(200, 'Success')
-@login_api.response(404, 'Username not found')
-@login_api.response(400, 'password wrong')
+@login_ns.route('')
+@login_ns.response(200, 'Success')
+@login_ns.response(404, 'Username not found')
+@login_ns.response(400, 'password wrong')
 class Login(Resource):
-    @login_api.doc(body=login_parser)
+    @login_ns.doc(body=login_parser)
     def post(self):
         """Login as a user"""
         args = login_parser.parse_args()
@@ -891,7 +915,7 @@ class Login(Resource):
 
         return self.try_login(username, password)
 
-    @login_api.response(200, 'successfully get login form')
+    @login_ns.response(200, 'successfully get login form')
     def get(self):
         """Get the login form"""
         return Response('''
@@ -916,8 +940,7 @@ class Login(Resource):
             return abort(401)
 
 
-register_api = Namespace('register', "Register operations")
-book_vector.add_namespace(register_api)
+register_ns = Namespace('register', "Register operations")
 
 reg_parser = reqparse.RequestParser()
 reg_parser.add_argument('username', type=str, required=True, location='form')
@@ -927,11 +950,11 @@ reg_parser.add_argument('first_name', type=str, required=False, location='form')
 reg_parser.add_argument('last_name', type=str, required=False, location='form')
 reg_parser.add_argument('phone', type=str, required=False, location='form')
 
-@register_api.route('/')
+@register_ns.route('/')
 class Register(Resource):
-    @register_api.response(201, "Registered Successfully")
-    @register_api.response(409, 'User existed')
-    @register_api.doc(body=reg_parser)
+    @register_ns.response(201, "Registered Successfully")
+    @register_ns.response(409, 'User existed')
+    @register_ns.doc(body=reg_parser)
     def post(self):
         """Register as a user"""
         args = reg_parser.parse_args()
@@ -956,7 +979,7 @@ class Register(Resource):
         db.session.commit()
         return Response("Registered Successfully", 201)
 
-    @register_api.response(200, 'Register form get')
+    @register_ns.response(200, 'Register form get')
     def get(self):
         """Get user registration form"""
         return Response('''
@@ -972,12 +995,11 @@ class Register(Resource):
         ''')
 
 
-logout_api = Namespace('logout', description="Logout operations")
-book_vector.add_namespace(logout_api)
+logout_ns = Namespace('logout', description="Logout operations")
 
 
-@logout_api.route('/')
-@login_api.response(200, 'Success')
+@logout_ns.route('/')
+@login_ns.response(200, 'Success')
 class Logout(Resource):
     def delete(self):
         """Current user logout"""
@@ -985,16 +1007,15 @@ class Logout(Resource):
         return "Logout Successfully", 200
 
 
-reminder_api = Namespace('reminder', description="Send reminder operations")
-book_vector.add_namespace(reminder_api)
+reminder_ns = Namespace('reminder', description="Send reminder operations")
 
 
-@reminder_api.route('/send/<days>')
-@reminder_api.doc(params={'days': 'within the number of days to remind users to return books'})
-@reminder_api.response(201, 'Success')
-@reminder_api.response(200, 'No reminders needed to be sent')
-@reminder_api.response(404, 'Error found')
-@reminder_api.response(400, 'days should be > 0')
+@reminder_ns.route('/send/<days>')
+@reminder_ns.doc(params={'days': 'within the number of days to remind users to return books'})
+@reminder_ns.response(201, 'Success')
+@reminder_ns.response(200, 'No reminders needed to be sent')
+@reminder_ns.response(404, 'Error found')
+@reminder_ns.response(400, 'days should be > 0')
 class Reminder(Resource):
     def post(self, days):
         """Send reminders to those need to return books within specific days from current time"""
@@ -1018,3 +1039,13 @@ class Reminder(Resource):
             return 'Reminders sent successfully!', 201
         except Exception as e:
             return 'Error in sending reminders', 404
+
+
+book_vector.add_namespace(register_ns)
+book_vector.add_namespace(login_ns)
+book_vector.add_namespace(book_ns)
+book_vector.add_namespace(user_ns)
+book_vector.add_namespace(copy_ns)
+book_vector.add_namespace(order_ns)
+book_vector.add_namespace(reminder_ns)
+book_vector.add_namespace(logout_ns)
