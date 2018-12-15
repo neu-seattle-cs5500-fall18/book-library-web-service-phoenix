@@ -1,6 +1,6 @@
 from flask import Flask
 from db_server import db
-from server import login_manager, book_vector, book_ns, user_ns, copy_ns, order_ns, login_ns, register_ns, logout_ns, reminder_ns
+from server import login_manager, book_vector
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True

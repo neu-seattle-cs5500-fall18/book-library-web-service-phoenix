@@ -156,7 +156,7 @@ class Order(db.Model):
 
 class Notes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    copy_id = db.Column(db.Integer, db.ForeignKey(Copy.id), nullable=False)
+    copy_id = db.Column(db.Integer, db.ForeignKey('copy.id'), nullable=False)
     note = db.Column(db.String, nullable=False)
 
     def __repr__(self):

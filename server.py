@@ -256,7 +256,7 @@ list_marshaller = user_ns.model('List', {
 
 full_list_marshaller = user_ns.model('ListModel', {
     'id': fields.Integer(),
-    'user':fields.String(),
+    'user': fields.String(),
     'name': fields.String(),
     'books': fields.String()
 })
@@ -347,7 +347,7 @@ class PrivateList(Resource):
         return lst.serialize(), 200
 
 
-add_remove_books_marshaller = user_ns.model('Books', {
+add_remove_books_marshaller = user_ns.model('Remove_Book_Query', {
     'book_ids': fields.String()
 })
 
@@ -428,7 +428,7 @@ copy_marshaller = copy_ns.model('Copy', {
     'book_id': fields.Integer(),
 })
 
-full_copy_marshaller = copy_ns.model('Copy', {
+full_copy_marshaller = copy_ns.model('CopyModel', {
     'id': fields.Integer(),
     'user': fields.String(),
     'book_id': fields.Integer(),
@@ -443,7 +443,7 @@ class Copy(Resource):
     @copy_ns.expect(copy_marshaller, validate=True)
     def post(self):
         """
-        Add copy of a book to a user
+        Add copy of a book to the current login user
         :return: Json format of a copy
         """
         body = request.get_json()
@@ -465,7 +465,7 @@ class Copy(Resource):
 
     @copy_ns.response(200, 'success')
     def get(self):
-        """Get all information of all book copies"""
+        """Get all information of all book copies in the library system"""
         copies = db.session.query(models.Copy)
         return [copy.serialize() for copy in copies], 200
 
@@ -486,7 +486,7 @@ class Copy(Resource):
         """
         Search copies of books by copy_id/book_id/username/status or combination search
         if no query params provided, return all copies
-        :return:
+        :return: Json list of copy of books thar meet the query
         """
         copies = db.session.query(models.Copy)
         args = copy_query_parser.parse_args()
@@ -516,7 +516,10 @@ class Copy(Resource):
 
     @copy_ns.response(401, 'Unauthorized user')
     def delete(self, copy_id):
-        """Delete a copy of books"""
+        """
+        Delete a copy of book which is belong to the current login user
+        :return: Message if the copy of book is deleted.
+        """
         copy = db.session.query(models.Copy).filter_by(id=copy_id).first()
         if copy is None:
             return 'copy is not found', 404
@@ -527,7 +530,7 @@ class Copy(Resource):
         return "copy has been deleted", 200
 
 
-status_marshaller = copy_ns.model('Status', {
+status_marshaller = copy_ns.model('Status_Update', {
     'status': fields.Integer()
 })
 
@@ -552,6 +555,12 @@ class Copy(Resource):
         db.session.commit()
         return copy.serialize(), 200
 
+
+# full_note = copy_ns.models('NoteModel', {
+#     'id': fields.Integer(),
+#     'copy_id': fields.Integer(),
+#     #'note': fields.String()
+# })
 
 note_marshaller = copy_ns.model('Note', {
     'note': fields.String()
@@ -634,11 +643,22 @@ def checkCopyValidity(copy_id):
 
 order_ns = Namespace('order', description="Order operations")
 
-order_marshaller = order_ns.model("Order", {
+order_marshaller = order_ns.model("Order_Query", {
     'copy_id': fields.Integer(),
     'borrower': fields.String(),
     'copy_owner': fields.String(),
     'return_date': fields.DateTime(dt_format='iso8601')
+})
+
+full_order = order_ns.model("OrderModel", {
+    'id': fields.Integer(),
+    'copy_id': fields.Integer(),
+    'borrower': fields.String(),
+    'copy_owner': fields.String(),
+    'status': fields.Integer(),
+    'created': fields.DateTime(dt_format='iso8601'),
+    'modified': fields.DateTime(dt_format='iso8601'),
+    'expire': fields.DateTime(dt_format='iso8601')
 })
 
 order_query_parser = reqparse.RequestParser()
@@ -790,7 +810,7 @@ class Order(Resource):
         if owner is None:
             return 'Copy owner not found in the system'.format(copy_owner), 409
         # return_date = body.get('return_date')
-        # if  datetime.strptime(return_date.isoformat()) < datetime.strptime(datetime.utcnow().isoformat()):
+        # if datetime.strptime(return_date, "%y%m%d") < datetime.strptime(datetime.utcnow().strftime("%Y-%m-%d"), "%y%m%d"):
         #     return 'Return date should be later than today', 400
         status = body.get('order_status')
         if status is not None and status < 0 or status > 4:
@@ -817,7 +837,7 @@ class Order(Resource):
         if order is None:
             return 'Order ID not found ' + str(order_id), 404
         elif invalid_user(order.copy_owner):
-            return 'Unauthorized User', 401
+            return 'Unauthorized user, please login as a user', 401
         copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
         copy.status = BOOK_COPY_STATUS_UNAVAILABLE
         db.session.commit()
@@ -836,7 +856,7 @@ class Order(Resource):
         if order is None:
             return 'Order ID not found ' + str(order_id), 404
         elif invalid_user(order.copy_owner):
-            return 'Unauthorized User', 401
+            return 'Unauthorized user, please login as a user', 401
         copy = db.session.query(models.Copy).filter_by(id=order.copy).first()
         copy.status = BOOK_COPY_STATUS_AVAILABLE
         db.session.commit()
