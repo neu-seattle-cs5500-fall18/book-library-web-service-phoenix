@@ -52,7 +52,7 @@ class User(db.Model):
         return '<User %r>' % self.username
 
     def parse_body(self, body):
-        self.username = body.get('username')
+        # self.username = body.get('username')
         self.password = body.get('password')
         self.email = body.get('email') or None
         self.first_name = body.get('first_name') or None
@@ -82,7 +82,7 @@ class PrivateList(db.Model):
     def parse_body(self, user_id, body):
         self.user = user_id
         self.name = body.get('name') or None
-        self.books = str(set(body.get('books'))) or None
+        self.books = str(" ".join(body.get('books').split())) or None
 
     def serialize(self):
         return {
@@ -104,7 +104,7 @@ class Copy(db.Model):
 
     def parse_body(self, body):
         self.user = body.get('user') or None
-        self.book = body.get('book') or None
+        self.book = body.get('book_id') or None
 
     def serialize(self):
         return {
@@ -129,10 +129,17 @@ class Order(db.Model):
         return '<Copy %r>' % self.id
 
     def parse_body(self, body):
-        self.copy = body.get('copy') or None
+        self.copy = body.get('copy_id') or None
         self.borrower = body.get('borrower') or None
         self.copy_owner = body.get('copy_owner') or None
-        self.expire = body.get('expire') or None
+        self.expire = body.get('return_date') or None
+
+    def parse_body_status(self, body):
+        self.copy = body.get('copy_id') or None
+        self.borrower = body.get('borrower') or None
+        self.copy_owner = body.get('copy_owner') or None
+        self.expire = body.get('return_date') or None
+        self.status = body.get('order_status') or None
 
     def serialize(self):
         return {
@@ -149,7 +156,7 @@ class Order(db.Model):
 
 class Notes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    copy_id = db.Column(db.Integer, db.ForeignKey('copy.id'), nullable=False)
+    copy_id = db.Column(db.Integer, db.ForeignKey(Copy.id), nullable=False)
     note = db.Column(db.String, nullable=False)
 
     def __repr__(self):
